@@ -88,7 +88,10 @@ expect('No history lever', first.lever, 'start');
 
 // Mid-range: add one rep to the first set below the ceiling.
 const mid = nextTarget(legPress, legPressTarget, [log('leg-press', sets([[40, 9, 2], [40, 8, 2], [40, 8, 2]]))]);
-expect('Mid-range adds a rep to set 1', mid.reps.join(','), '10,8,8');
+// The whole ladder climbs together. Adding a rep to only the first set below
+// the ceiling took twelve sessions to fill three sets, and the main lifts are
+// trained once a week — the programme ended on its opening weight.
+expect('Mid-range adds a rep to every set below the ceiling', mid.reps.join(','), '10,9,9');
 expect('Mid-range holds load', mid.kg, 40);
 expect('Mid-range lever', mid.lever, 'add-reps');
 
@@ -112,17 +115,58 @@ const small = nextTarget(lat, latTarget, [log('cable-lateral-raise', sets([[5, 1
 expect('Oversized jump holds load', small.kg, 5);
 expect('Oversized jump extends the range', small.lever, 'extend-range');
 expect('Extended reps', small.reps.join(','), '16,16');
-expect('Ceiling is 10%', INCREMENT_CEILING, 0.1);
+expect('Ceiling is 25%', INCREMENT_CEILING, 0.25);
 
-// Range already extended: next lever is an extra set.
-const addSet = nextTarget(lat, latTarget, [log('cable-lateral-raise', sets([[5, 17, 2], [5, 17, 2]]))]);
-expect('Extended range then adds a set', addSet.lever, 'add-set');
+// Range already extended, and +2.5 kg on 2.5 kg is a doubling: an extra set is
+// the only progression left, so that is what it offers.
+const addSet = nextTarget(lat, latTarget, [log('cable-lateral-raise', sets([[2.5, 17, 2], [2.5, 17, 2]]))]);
+expect('Doubling extends to an extra set', addSet.lever, 'add-set');
 expect('Set count goes up', addSet.reps.length, 3);
 
-// Out of levers on a cable: slow the lowering.
-const tempo = nextTarget(lat, latTarget, [log('cable-lateral-raise', sets([[5, 17, 2], [5, 17, 2], [5, 17, 2]]))]);
-expect('Then tempo', tempo.lever, 'tempo');
-expect('Eccentric prescribed', tempo.eccentricSec, 3);
+// Out of levers at the very bottom of the stack: +2.5 kg on 2.5 kg doubles the
+// weight, which no amount of earned reps justifies. This one holds, and says
+// where smaller steps come from instead of parking her silently.
+const stuck = nextTarget(lat, latTarget, [log('cable-lateral-raise', sets([[2.5, 17, 2], [2.5, 17, 2], [2.5, 17, 2]]))]);
+expect('Doubling holds and advises', stuck.lever, 'micro-load');
+expect('Doubling does not move the load', stuck.kg, 2.5);
+
+// One step up the stack the same lift can progress — the hold is about the
+// ratio, not the exercise.
+const unstuck = nextTarget(lat, latTarget, [log('cable-lateral-raise', sets([[5, 17, 2], [5, 17, 2], [5, 17, 2]]))]);
+expect('Half-again jump is taken once levers are spent', unstuck.lever, 'add-load');
+expect('Half-again jump moves the load', unstuck.kg, 7.5);
+
+// The same dead end on a heavier lift must NOT hold. Holding here is permanent:
+// the percentage never changes if the weight never moves, which is exactly how
+// all 19 loaded exercises ended up unable to progress.
+const pressTarget = { sets: 3, repMin: 8, repMax: 12, rir: 2, restSec: 120 };
+const chest = getExercise('chest-press-machine');
+const exhausted = nextTarget(chest, pressTarget, [log('chest-press-machine', sets([[15, 14, 2], [15, 14, 2], [15, 14, 2], [15, 14, 2]]))]);
+expect('Exhausted levers take the plate', exhausted.lever, 'add-load');
+expect('Exhausted levers move the load', exhausted.kg, 20);
+
+// Every loaded exercise must be able to reach add-load from its own starting
+// weight. This is the assertion whose absence let the core mechanic ship dead.
+let neverProgresses = 0;
+for (const ex of EXERCISES) {
+  if (ex.bwRatio <= 0) continue;
+  const t0 = { sets: 3, repMin: 8, repMax: 12, rir: 2, restSec: 90 };
+  let hist: LoggedExercise[] = [];
+  let sawLoad = false;
+  const start = startingLoad(ex, 62, 1.0);
+  for (let i = 0; i < 40 && !sawLoad; i++) {
+    const d = nextTarget(ex, t0, hist, start);
+    if (d.lever === 'add-load' && d.kg > start) sawLoad = true;
+    hist = [{ exerciseId: ex.id, sets: d.reps.map((r) => ({ kg: d.kg, reps: r, rir: 2 })) }, ...hist];
+  }
+  // The cable lateral raise is the one honest exception: its smallest plate is
+  // 100% of its starting load, and the right answer is different equipment.
+  if (!sawLoad && ex.id !== 'cable-lateral-raise') {
+    neverProgresses++;
+    console.log(`   x ${ex.id} never reaches add-load from ${start} kg`);
+  }
+}
+expect('Every loaded exercise can add load', neverProgresses, 0);
 
 console.log('\n--- Stalls and deloads ---');
 const flat = sets([[40, 10, 2], [40, 10, 2], [40, 10, 2]]);

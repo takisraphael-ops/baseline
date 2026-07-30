@@ -12,8 +12,31 @@
 
 import type { Exercise, LoggedExercise, LoggedSet, SetTarget } from './types';
 
-/** Above this share of current load, a plate jump is too big to take. */
-export const INCREMENT_CEILING = 0.10;
+/**
+ * Above this share of current load, a plate jump is too big to take straight
+ * away and a different lever is pulled first.
+ *
+ * This was 0.10, which was wrong in a way that disabled the whole app. Beginner
+ * starting loads are low and gym plates are not: at a 40 kg leg press the only
+ * available step is +5 kg, which is 12.5%. Every one of the 19 loaded exercises
+ * started above the ceiling, so `add-load` could never fire for any of them —
+ * an app whose entire purpose is progressive overload never once prescribed
+ * more load. 0.25 clears the ordinary machine steps while still catching the
+ * genuinely absurd ones, like +2.5 kg on a 2.5 kg lateral raise.
+ */
+export const INCREMENT_CEILING = 0.25;
+
+/**
+ * At or above this share the plate is close to doubling the weight, which is
+ * worse than any alternative — so this stays a hold, and the advice is to go
+ * and find smaller steps.
+ *
+ * Set high deliberately. A hold at the end of the lever list is permanent (the
+ * percentage cannot change if the weight never moves), so anything that lands
+ * here is parked for good. A 50% step after four sets of fourteen reps is a
+ * step she can take; +2.5 kg on a 2.5 kg cable is not.
+ */
+const ABSURD_JUMP = 0.75;
 
 /** Consecutive non-progressing sessions before a deload is prescribed. */
 export const STALL_LIMIT = 2;
@@ -166,38 +189,58 @@ export function nextTarget(
       };
     }
 
-    if (last.sets.length < target.sets + 1) {
-      return {
-        kg,
-        reps: Array(last.sets.length + 1).fill(target.repMax),
-        lever: 'add-set',
-        reason: `Still too big a jump at ${pct}%. Same weight, one extra set — more total work is progress just as much as more load is.`,
-      };
-    }
-
-    if (ex.equipment === 'machine' || ex.equipment === 'cable') {
+    // Reps are maxed out. From here it depends on how big the plate really is.
+    //
+    // Extra sets are a consolation prize, not a progression: they are only the
+    // right answer for a lift that genuinely cannot take its next plate. Handing
+    // them out more widely is how this used to deadlock — the block scaling
+    // raises `target.sets` every four weeks, which re-armed the add-set lever
+    // faster than it could ever be exhausted, so the load step below was
+    // unreachable and the weight never moved for the whole twelve weeks.
+    if (jump >= ABSURD_JUMP) {
+      if (last.sets.length < target.sets + 1) {
+        return {
+          kg,
+          reps: Array(last.sets.length + 1).fill(target.repMax),
+          lever: 'add-set',
+          reason: `The next plate is +${ex.incrementKg} kg — a ${pct}% jump, near enough to doubling. Same weight, one extra set instead; more total work is progress just as much as more load is.`,
+        };
+      }
       return {
         kg,
         reps: last.sets.map((s) => s.reps),
-        lever: 'tempo',
-        reason: `Out of room at this weight. Same load and reps, but lower for a slow 3 seconds on every rep — that makes the same plate meaningfully harder.`,
-        eccentricSec: 3,
+        lever: 'micro-load',
+        reason: `+${ex.incrementKg} kg would be a ${pct}% jump, and you have run out of other levers. You need smaller steps than this equipment has: magnetic micro-plates if the gym stocks them, or the dumbbell version where the jumps are 1-2 kg.`,
       };
     }
 
+    // A bigger step than the textbook likes, but she has earned it — top of an
+    // extended range on every set with something still in reserve.
+    const nextKg = kg + ex.incrementKg;
     return {
-      kg,
-      reps: last.sets.map((s) => s.reps),
-      lever: 'micro-load',
-      reason: `You need a smaller step than this equipment offers. Add magnetic micro-plates if the gym has them, or move to the dumbbell version where the jumps are 1-2 kg.`,
+      kg: nextKg,
+      reps: Array(target.sets).fill(target.repMin),
+      lever: 'add-load',
+      reason: `You have taken ${kg} kg as far as it goes — ${extendedCeiling} reps on every set with something left over. Up to ${nextKg} kg. It is a ${pct}% step, so expect ${target.repMin} hard reps rather than ${extendedCeiling}; that is the jump working, not you going backwards.`,
     };
   }
 
-  // The ordinary case: add a single rep to the first set below the ceiling.
+  // The ordinary case: add a rep to every set that is below the ceiling, so the
+  // whole ladder climbs together — 8/8/8, 9/9/9, 10/10/10, then load.
+  //
+  // This used to add one rep to the first set below the ceiling only, which
+  // sounds gentler and is actually a trap: filling three sets from 8 to 12 that
+  // way takes twelve sessions, and the main lifts are trained once a week. The
+  // whole twelve weeks would go by on the opening weight.
   const reps = last.sets.map((s) => s.reps);
-  while (reps.length < target.sets) reps.push(target.repMin);
-  const i = reps.findIndex((r) => r < target.repMax);
-  if (i >= 0) reps[i] += 1;
+  // A set added because the block stepped volume up inherits where the other
+  // sets already are. Starting it at the bottom of the range instead reads as
+  // cautious and behaves as a stall: the "all sets at the ceiling" test can
+  // never pass again, so the load stops moving every time a block changes.
+  while (reps.length < target.sets) reps.push(reps[reps.length - 1] ?? target.repMin);
+  for (let i = 0; i < reps.length; i++) {
+    if (reps[i] < target.repMax) reps[i] += 1;
+  }
 
   const failed = wasTakenToFailure(last.sets);
   return {
