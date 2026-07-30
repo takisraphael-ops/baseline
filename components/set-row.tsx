@@ -95,13 +95,17 @@ export function EffortPicker({
   value, onPick,
 }: { value: number | null; onPick: (rir: number) => void }) {
   const options = [
-    { rir: 3, label: 'Comfortable', sub: 'Could have done 3 or more' },
-    { rir: 2, label: 'Hard', sub: 'About 2 left in the tank' },
-    { rir: 0, label: 'All out', sub: 'Could not have done another' },
+    { rir: 3, label: 'Comfortable', sub: '3+ spare', then: 'Next time jumps two reps, or two plates at the top of the range.' },
+    { rir: 2, label: 'Hard', sub: '~2 spare', then: 'Next time goes up one rep. This is the target most sessions.' },
+    { rir: 0, label: 'All out', sub: 'Nothing left', then: 'Next time repeats this exactly. Nothing goes up until there is room again.' },
   ];
+  const picked = options.find((o) => o.rir === value);
   return (
-    <div className="mt-3">
-      <p className="label mb-2">How did the last set feel?</p>
+    <div className={`effort ${value === null ? 'effort-asking' : ''}`}>
+      <p className="label" style={{ marginBottom: 2 }}>How did that last set feel?</p>
+      {/* Said plainly, because it is true and because it changes the answer:
+          someone who knows the app is listening rates honestly. */}
+      <p className="text-[12px] muted mb-2.5">This is what sets next session&rsquo;s numbers.</p>
       <div className="grid grid-cols-3 gap-2">
         {options.map((o) => {
           const on = value === o.rir;
@@ -110,25 +114,20 @@ export function EffortPicker({
               key={o.rir}
               type="button"
               onClick={() => onPick(o.rir)}
-              className="rounded-[10px] px-2 py-2.5 text-left"
-              style={{
-                background: on ? 'var(--accent-soft)' : 'var(--bg-sunken)',
-                border: `1.5px solid ${on ? 'var(--accent)' : 'transparent'}`,
-                minHeight: 56,
-              }}
+              className={`effort-opt ${on ? 'on' : ''}`}
               aria-pressed={on}
             >
-              <span
-                className="block text-[13px] font-semibold leading-tight"
-                style={{ color: on ? 'var(--accent)' : 'var(--text)' }}
-              >
-                {o.label}
-              </span>
-              <span className="block text-[11px] muted leading-tight mt-0.5">{o.sub}</span>
+              <span className="block text-[13px] font-semibold leading-tight">{o.label}</span>
+              <span className="block text-[11px] leading-tight mt-0.5 opacity-70">{o.sub}</span>
             </button>
           );
         })}
       </div>
+      {picked && (
+        <p className="text-[12px] mt-2 pop-in" style={{ color: 'var(--accent)' }}>
+          {picked.then}
+        </p>
+      )}
     </div>
   );
 }

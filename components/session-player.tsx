@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftRight, Check, ChevronDown, ChevronUp, Info, Link2, PlayCircle, RotateCcw, Search, Undo2 } from 'lucide-react';
+import { ArrowLeftRight, Check, ChevronDown, ChevronUp, Info, Link2, PlayCircle, RotateCcw, Search, Trophy, Undo2 } from 'lucide-react';
 import Glossed from '@/components/glossed';
 import Term from '@/components/term';
 import { demoUrl, getExercise, hasCuratedVideo, ytSearch } from '@/lib/train/exercises';
-import { SESSION_ORDER, blockForWeek, intervalsForWeek, isDeloadWeek, scaleTarget } from '@/lib/train/programme';
-import { formatTarget, nextTarget } from '@/lib/train/progression';
+import { SESSION_ORDER, TOTAL_WEEKS, blockForWeek, intervalsForWeek, isDeloadWeek, scaleTarget } from '@/lib/train/programme';
+import { formatTarget, nextTarget, topKg } from '@/lib/train/progression';
 import { defaultSetupOpen, startingLoad, strengthFactor } from '@/lib/train/quiz';
 import { appendLog, historyFor, load, todayISO } from '@/lib/train/store';
 import type { LoggedSet, SessionSpec, TrainState } from '@/lib/train/types';
@@ -50,6 +50,7 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
   const [swaps, setSwaps] = useState<Record<string, string>>({});
   const [swapOpen, setSwapOpen] = useState<string | null>(null);
   const [felt, setFelt] = useState('');
+  const [finishing, setFinishing] = useState(false);
 
   useEffect(() => {
     setState(load());
@@ -71,7 +72,10 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
       const target = scaleTarget(slot.target, week);
       const history = historyFor(state, slot.exerciseId);
       const start = p ? startingLoad(ex, p.weightKg, factor) : ex.startKg;
-      return { slot, ex, target, history, decision: nextTarget(ex, target, history, start) };
+      // Heaviest she has ever logged on this movement, so a new one can be
+      // called out the moment it happens rather than found later in a chart.
+      const best = history.reduce((m, h) => Math.max(m, topKg(h)), 0);
+      return { slot, ex, target, history, best, decision: nextTarget(ex, target, history, start) };
     });
   }, [state, session, week, swaps]);
 
@@ -156,6 +160,7 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
   const pct = totalSets > 0 ? (doneSets / totalSets) * 100 : 0;
 
   const finish = () => {
+    setFinishing(true);
     const exercises = plan
       .map(({ ex }) => ({
         exerciseId: ex.id,
@@ -172,8 +177,44 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
       howItFelt: felt.trim() || undefined,
       completedAt: new Date().toISOString(),
     });
-    router.push('/progress');
+    // A session that ends by silently changing screens gives back nothing for
+    // an hour's work. Two seconds of "here is what you just did" is the only
+    // moment in the app that exists purely to be earned.
+    window.setTimeout(() => router.push('/progress'), 2100);
   };
+
+  // Counted from what is actually in the log, not from the targets on screen.
+  const bests = plan.filter(({ ex, best }) => {
+    if (best <= 0) return false;
+    const rows = logged[ex.id] ?? [];
+    const flags = doneFlags[ex.id] ?? [];
+    return rows.some((r, i) => flags[i] && r.kg > best);
+  });
+
+  if (finishing) {
+    return (
+      <div className="done-screen" role="status" aria-live="polite">
+        <div className="done-inner">
+          <div className="done-ring"><Check size={44} strokeWidth={3} aria-hidden /></div>
+          <p className="done-title">{session.name} logged</p>
+          <p className="done-sub">
+            {doneSets} {doneSets === 1 ? 'set' : 'sets'}
+            {cardioDone && cardio.minutes > 0 ? ` · ${cardio.minutes} min cardio` : ''}
+            {' · week '}{week} of {TOTAL_WEEKS}
+          </p>
+          {bests.length > 0 && (
+            <p className="done-best">
+              <Trophy size={15} aria-hidden />
+              {bests.length === 1
+                ? `New best on the ${bests[0].ex.name.toLowerCase()}`
+                : `${bests.length} new personal bests`}
+            </p>
+          )}
+          <div className="done-bar"><span /></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-4 ${rest !== null ? 'pb-24' : ''}`}>
@@ -210,7 +251,7 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
         incrementKg={mainPlan ? mainPlan.ex.incrementKg : 2.5}
       />
 
-      {plan.map(({ slot, ex, target, history, decision }, idx) => {
+      {plan.map(({ slot, ex, target, history, best, decision }, idx) => {
         const isOpen = open === ex.id;
         const rows = logged[ex.id] ?? [];
         const flags = doneFlags[ex.id] ?? [];
@@ -219,6 +260,9 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
         const bodyweight = decision.kg === 0 && ex.bwRatio === 0;
         const secs = SECONDS.has(ex.id);
         const allDone = flags.length > 0 && flags.every(Boolean);
+        // Only once it is actually in the log — a target on screen is not a lift.
+        const loggedTop = rows.reduce((m, r, i) => (flags[i] ? Math.max(m, r.kg) : m), 0);
+        const newBest = best > 0 && loggedTop > best;
         const lastDone = flags.lastIndexOf(true);
         const swapped = swaps[slot.exerciseId] !== undefined;
         const original = swapped ? getExercise(slot.exerciseId) : null;
@@ -251,6 +295,9 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
                     </Term>
                   )}
                   {allDone && <span className="chip chip-ok"><Check size={11} aria-hidden /> Done</span>}
+                  {newBest && (
+                    <span className="chip chip-best"><Trophy size={11} aria-hidden /> Best yet · {loggedTop} kg</span>
+                  )}
                   {swapped && (
                     <span className="chip" style={{ background: 'var(--prime-soft)', color: 'var(--prime)' }}>
                       <ArrowLeftRight size={11} aria-hidden /> Swapped in

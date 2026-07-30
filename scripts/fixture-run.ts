@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { getExercise } from '../lib/train/exercises';
 import { SESSIONS, SESSION_ORDER, blockForWeek, intervalsForWeek, isDeloadWeek, scaleTarget } from '../lib/train/programme';
-import { INCREMENT_CEILING, nextTarget, progressed, stallCount, topKg, totalReps } from '../lib/train/progression';
+import { INCREMENT_CEILING, effortOf, nextTarget, progressed, stallCount, topKg, totalReps } from '../lib/train/progression';
 import { classifyHr, karvonen, maxHrTanaka, zones } from '../lib/train/zones';
 import { classifyVo2, cooperVo2, isMeaningfulChange, rockportVo2 } from '../lib/train/vo2';
 import { plannedWeeklyVolume, weeklyWalkMinutes } from '../lib/train/volume';
@@ -106,6 +106,40 @@ expect('Ceiling reached lever', up.lever, 'add-load');
 const ground = nextTarget(legPress, legPressTarget, [log('leg-press', sets([[60, 12, 0], [60, 12, 0], [60, 12, 0]]))]);
 expect('Failure blocks the load jump', ground.kg, 60);
 expect('Failure lever', ground.lever, 'add-reps');
+
+console.log('\n--- Effort steers the next prescription ---');
+// The one piece of information only she has. A fixed +1 ignores it and is wrong
+// in both directions: too slow with four reps spare, too fast with none.
+const rated = (kg: number, reps: number, rir: number | null): LoggedExercise =>
+  log('leg-press', [{ kg, reps, rir }, { kg, reps, rir: null }, { kg, reps, rir: null }]);
+
+const lat0 = getExercise('cable-lateral-raise');
+const easyMid = nextTarget(legPress, legPressTarget, [rated(40, 9, 3)]);
+expect('Comfortable mid-ladder adds two reps', easyMid.reps.join(','), '11,11,11');
+const hardMid = nextTarget(legPress, legPressTarget, [rated(40, 9, 2)]);
+expect('Hard mid-ladder adds one rep', hardMid.reps.join(','), '10,10,10');
+const maxedMid = nextTarget(legPress, legPressTarget, [rated(40, 9, 0)]);
+expect('All out mid-ladder holds the reps', maxedMid.reps.join(','), '9,9,9');
+expect('All out mid-ladder holds the load', maxedMid.kg, 40);
+const unratedMid = nextTarget(legPress, legPressTarget, [rated(40, 9, null)]);
+expect('Unrated is treated as an ordinary hard set', unratedMid.reps.join(','), '10,10,10');
+
+// At the top of the range the same signal decides one plate or two.
+const easyTop = nextTarget(legPress, legPressTarget, [rated(60, 12, 3)]);
+expect('Comfortable at the ceiling takes two plates', easyTop.kg, 70);
+const hardTop = nextTarget(legPress, legPressTarget, [rated(60, 12, 2)]);
+expect('Hard at the ceiling takes one plate', hardTop.kg, 65);
+const maxedTop = nextTarget(legPress, legPressTarget, [rated(60, 12, 0)]);
+expect('All out at the ceiling does not add load', maxedTop.kg, 60);
+
+// Never averages an honest "all out" away against unrated sets either side.
+expect('Effort reads the hardest rated set', effortOf([{ kg: 40, reps: 10, rir: 3 }, { kg: 40, reps: 10, rir: 0 }]), 0);
+expect('No rating at all reads as null', effortOf([{ kg: 40, reps: 10, rir: null }]), null);
+
+// The double step must not compound into an absurd jump on a light lift.
+const latEasy = nextTarget(lat0, { sets: 2, repMin: 12, repMax: 15, rir: 2, restSec: 45 },
+  [log('cable-lateral-raise', [{ kg: 30, reps: 15, rir: 3 }, { kg: 30, reps: 15, rir: null }])]);
+expect('Double step stays within the sane bound', latEasy.kg <= 30 + 2.5 * 2, true);
 
 console.log('\n--- The machine-stack problem ---');
 // Lateral raise: 2.5 kg plate on 5 kg is a 50% jump. Load must be held.
@@ -398,6 +432,21 @@ expect('Lateral raise swaps to the other lateral raise', alternativesFor('cable-
 // Anything already in today's session is not offered as a substitute for it.
 const excluded = alternativesFor('leg-press', ['goblet-squat', 'hack-squat']).map((a) => a.exercise.id);
 expect('Excluded ids are withheld', excluded.includes('goblet-squat') || excluded.includes('hack-squat'), false);
+
+console.log('\n--- Effort control matches the engine ---');
+// The three buttons write the numbers the engine branches on. If the control
+// and the engine drift, the app quietly stops doing what the copy promises.
+{
+  const picker = readFileSync(new URL('../components/set-row.tsx', import.meta.url), 'utf8');
+  const rirs = (picker.match(/\{ rir: (\d+),/g) ?? []).map((m) => Number(m.match(/\d+/)![0]));
+  expect('Picker offers exactly three ratings', rirs.length, 3);
+  expect('Picker writes 3 / 2 / 0', rirs.join(','), '3,2,0');
+  // 3 must trigger the fast path, 0 must block a load increase entirely.
+  const fast = nextTarget(legPress, legPressTarget, [rated(40, 9, rirs[0])]);
+  expect('The "comfortable" button really does accelerate', fast.reps.join(','), '11,11,11');
+  const held = nextTarget(legPress, legPressTarget, [rated(60, 12, rirs[2])]);
+  expect('The "all out" button really does hold the load', held.kg, 60);
+}
 
 console.log('\n--- Splash markup ---');
 // The launch animation is duplicated: JSX in app/layout.tsx for the Next build,

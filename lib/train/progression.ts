@@ -108,6 +108,26 @@ export function wasTakenToFailure(sets: LoggedSet[]): boolean {
   return sets.some((s) => s.rir !== null && s.rir <= 0);
 }
 
+/**
+ * How much was left in the tank, taken from the hardest set she rated.
+ *
+ * The effort control asks once per exercise and writes to the last set she
+ * ticked, so most sets carry null. Reading the minimum means a single honest
+ * "all out" is never averaged away by unrated sets sitting either side of it.
+ *
+ * Null means she skipped the question, which is treated as an ordinary hard
+ * set — the programme should not accelerate on the strength of no answer.
+ */
+export function effortOf(sets: LoggedSet[]): number | null {
+  const rated = sets.map((s) => s.rir).filter((r): r is number => r !== null);
+  return rated.length === 0 ? null : Math.min(...rated);
+}
+
+/** She had 3+ reps spare: the prescription was too easy and should move faster. */
+const EASY_RIR = 3;
+/** She had 1 or fewer spare: at her limit, so consolidate rather than push. */
+const MAXED_RIR = 1;
+
 function allSetsAtCeiling(sets: LoggedSet[], repMax: number): boolean {
   if (sets.length === 0) return false;
   // Load only goes up when the top of the range was reached with something left
@@ -161,17 +181,27 @@ export function nextTarget(
     };
   }
 
+  const effort = effortOf(last.sets);
+
   if (allSetsAtCeiling(last.sets, target.repMax)) {
     const jump = kg > 0 ? ex.incrementKg / kg : 0;
 
     // The plate is small enough relative to the load — take it.
     if (kg === 0 || jump <= INCREMENT_CEILING) {
-      const nextKg = kg + ex.incrementKg;
+      // She reported the top of the range as comfortable, so one plate is not
+      // the honest answer — the prescription was simply too light. Two plates,
+      // as long as the pair is still a sane step.
+      const doubleStep =
+        effort !== null && effort >= EASY_RIR && (ex.incrementKg * 2) / kg <= INCREMENT_CEILING * 1.4;
+      const plates = doubleStep ? 2 : 1;
+      const nextKg = kg + ex.incrementKg * plates;
       return {
         kg: nextKg,
         reps: Array(target.sets).fill(target.repMin),
         lever: 'add-load',
-        reason: `You hit ${target.repMax} on every set with something left over. Up to ${nextKg} kg, back down to ${target.repMin} reps — it should feel hard again.`,
+        reason: doubleStep
+          ? `You called ${target.repMax} reps at ${kg} kg comfortable, so one plate is not enough — taking two. Up to ${nextKg} kg, back down to ${target.repMin} reps.`
+          : `You hit ${target.repMax} on every set with something left over. Up to ${nextKg} kg, back down to ${target.repMin} reps — it should feel hard again.`,
       };
     }
 
@@ -238,17 +268,33 @@ export function nextTarget(
   // cautious and behaves as a stall: the "all sets at the ceiling" test can
   // never pass again, so the load stops moving every time a block changes.
   while (reps.length < target.sets) reps.push(reps[reps.length - 1] ?? target.repMin);
+
+  // How big a step, from what she said it felt like. A fixed +1 ignores the one
+  // piece of information only she has, and gets it wrong in both directions:
+  // too slow when she had four reps spare, too fast when she had none.
+  const failed = wasTakenToFailure(last.sets);
+  const step = effort === null ? 1 : effort >= EASY_RIR ? 2 : effort <= MAXED_RIR ? 0 : 1;
   for (let i = 0; i < reps.length; i++) {
-    if (reps[i] < target.repMax) reps[i] += 1;
+    if (reps[i] < target.repMax) reps[i] = Math.min(reps[i] + step, target.repMax);
   }
 
-  const failed = wasTakenToFailure(last.sets);
+  if (step === 0) {
+    return {
+      kg,
+      reps,
+      lever: 'add-reps',
+      reason: failed
+        ? `You went to failure last time, so this week is the same again — same weight, same reps, but stop with ${target.rir} in the tank. Repeating a hard session cleanly is progress; failure costs more in recovery than it pays back.`
+        : `That was close to your limit last time, so nothing goes up this week. Same weight, same reps, done better — the step comes once it feels like there is room again.`,
+    };
+  }
+
   return {
     kg,
     reps,
     lever: 'add-reps',
-    reason: failed
-      ? `Last time you went to failure. Same ${kg} kg, one more rep — but stop with ${target.rir} in the tank this time. Failure costs more in recovery than it pays back.`
+    reason: step === 2
+      ? `You said last time felt comfortable, so this is two more reps rather than one. Same ${kg} kg — the app follows what you tell it.`
       : `Same ${kg} kg, one more rep than last time. That is the whole method: small, boring, relentless.`,
   };
 }
