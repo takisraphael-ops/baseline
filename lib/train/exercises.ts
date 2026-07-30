@@ -6,12 +6,17 @@
 // Every entry names the specific adjustment and the landmark to line it up
 // against.
 //
-// Videos come in two parts. `videoUrl` is a curated tutorial where one was
-// found whose title clearly matches the movement; `videoSearch` backs every
-// exercise with a search that cannot 404. The UI shows both, because a dead
-// link while she is standing at a machine is the failure worth designing out.
-// The curated links could not be confirmed live from the build environment
-// (YouTube is unreachable there), which is exactly why the fallback stays.
+// Videos come in two parts. `videoUrl` is a curated tutorial whose title
+// clearly matches the movement; `videoSearch` backs every exercise with a
+// search that cannot 404. The UI shows both, because a dead link while she is
+// standing at a machine is the failure worth designing out.
+//
+// Every id here was resolved through https://www.youtube.com/oembed, and the
+// title that endpoint returned is recorded beside it. That comment is the
+// audit trail: if a video is later pulled, oembed stops returning that title
+// and the id can be re-picked. Short single-exercise clips are preferred over
+// compilations — she is checking one setup, not watching a lesson. The search
+// fallback stays regardless, since uploads can vanish without warning.
 
 import type { Exercise } from './types';
 
@@ -25,10 +30,12 @@ export const hasCuratedVideo = (ex: Exercise) => ex.videoUrl.trim() !== '';
 /**
  * Where the Watch button points. Curated video if there is one, search if not.
  *
- * "Not curated yet" is spelled `videoUrl: ''` in this file, so this must be a
- * truthiness test — `ex.videoUrl ?? fallback` keeps the empty string and
- * renders href="", which is a link to nowhere that silently does nothing when
- * tapped. Both call sites go through here so they cannot disagree.
+ * "Not curated yet" is spelled `videoUrl: ''`, so this must be a truthiness
+ * test — `ex.videoUrl ?? fallback` keeps the empty string and renders href="",
+ * which is a link to nowhere that silently does nothing when tapped. Every
+ * entry is curated today, but a new exercise gets added with an empty string
+ * before its video is picked, so the branch stays. Both call sites go through
+ * here so they cannot disagree.
  */
 export function demoUrl(ex: Exercise): string {
   return hasCuratedVideo(ex) ? ex.videoUrl : ytSearch(ex.videoSearch);
@@ -59,7 +66,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Stopping short of straight.', fix: 'Full lockout at the top is where the quad works hardest.' },
       { wrong: 'Pad sitting on the top of the foot.', fix: 'Move it down to the shin — on the foot it strains the ankle.' },
     ],
-    videoUrl: 'https://www.youtube.com/watch?v=TJQmtXUEzNk',
+    videoUrl: 'https://www.youtube.com/watch?v=TJQmtXUEzNk', // "Leg Extension Machine | Proper Technique + Form Tips" — Vivian Ngo
     videoLabel: 'Leg extension — setup and form',
     videoSearch: 'leg extension machine proper form setup',
     ladder: ['leg-extension'],
@@ -92,7 +99,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Locking the knees hard at the top.', fix: 'Leave them slightly soft. Locking out puts the load on the joint, not the muscle.' },
       { wrong: 'Hands on the knees.', fix: 'Hold the side handles. Hands on knees hides how much your legs are actually doing.' },
     ],
-    videoUrl: 'https://www.youtube.com/watch?v=8nm863C0c60',
+    videoUrl: 'https://www.youtube.com/watch?v=8nm863C0c60', // "Proper Leg Press Form | Common Mistakes | Beginner’s Guide to Gym Machines" — Tim Bullici
     videoLabel: 'Leg press — setup, depth and foot placement',
     videoSearch: 'leg press machine proper form beginner',
     ladder: ['leg-press', 'goblet-squat', 'hack-squat', 'barbell-back-squat'],
@@ -121,7 +128,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Heels lifting off the floor.', fix: 'Widen the stance slightly, or stand with your heels on small plates while you build ankle range.' },
       { wrong: 'Knees caving inward.', fix: 'Think about pushing the floor apart with your feet.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=CkFzgR55gho', // "How to Perform Dumbbell Goblet Squat" — Physique Development
     videoLabel: 'Goblet squat — the bridge to free-weight squatting',
     videoSearch: 'goblet squat form beginner',
     ladder: ['leg-press', 'goblet-squat', 'hack-squat', 'barbell-back-squat'],
@@ -142,7 +149,7 @@ export const EXERCISES: Exercise[] = [
     ],
     cues: ['Knees travel forward over the toes — that is correct here.', 'Keep constant tension; do not rest at the top.'],
     mistakes: [{ wrong: 'Bouncing out of the bottom.', fix: 'Pause for a beat, then drive. Bouncing loads the knee, not the quad.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=0tn5K9NlCfo', // "Hack Squat | Exercise Guide" — Bodybuilding.com
     videoLabel: 'Hack squat — form',
     videoSearch: 'hack squat machine form',
     ladder: ['leg-press', 'goblet-squat', 'hack-squat', 'barbell-back-squat'],
@@ -167,7 +174,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Training without the safety bars set.', fix: 'Always set them. They are what makes failing a rep a non-event.' },
       { wrong: 'Chest dropping forward out of the bottom.', fix: 'Lighter load and hold the brace. Speed comes later.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=8PMjqgR8Wa8', // "How to Barbell Back Squat | A Tutorial for Beginners" — Barbell Rehab
     videoLabel: 'Back squat — rack setup and bracing',
     videoSearch: 'barbell back squat form beginner tutorial',
     ladder: ['leg-press', 'goblet-squat', 'hack-squat', 'barbell-back-squat'],
@@ -192,7 +199,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Hips lifting off the seat.', fix: 'Tighten the lap pad, drop the weight.' },
       { wrong: 'Half reps.', fix: 'Full range. The hamstring only gets strong where you train it.' },
     ],
-    videoUrl: 'https://www.youtube.com/watch?v=t9sTSr-JYSs',
+    videoUrl: 'https://www.youtube.com/watch?v=t9sTSr-JYSs', // "Beginner's Guide: Seated Leg Curl" — SilverSneakers
     videoLabel: 'Seated leg curl — setup',
     videoSearch: 'seated leg curl machine form',
     ladder: ['lying-leg-curl', 'seated-leg-curl'],
@@ -222,7 +229,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Hips lifting off the bench at the top.', fix: 'Press them down and use less weight. Lifting the hips is the hamstring handing the job to your lower back.' },
       { wrong: 'Half reps.', fix: 'Full range both ways. The hamstring only gets strong where you train it.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=vl5nUdE9mWM', // "How to Lying Leg Curl | Proper Technique, Set Up, & Mistakes" — Physique Development
     videoLabel: 'Lying leg curl — setup and form',
     videoSearch: 'lying leg curl machine proper form hips down',
     ladder: ['lying-leg-curl', 'seated-leg-curl'],
@@ -251,7 +258,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Arching the lower back at the top instead of squeezing the glutes.', fix: 'Ribs down, chin tucked. The lift should stop when your body is straight, not past it.' },
       { wrong: 'Feet too far forward.', fix: 'Shins should be vertical at the top — that is the whole cue.' },
     ],
-    videoUrl: 'https://www.youtube.com/watch?v=01rcKtWWvwE',
+    videoUrl: 'https://www.youtube.com/watch?v=01rcKtWWvwE', // "HOW TO: use the Hip Thrust Machine | instructional video" — Hype Training & Coaching
     videoLabel: 'Hip thrust — the single best glute exercise',
     videoSearch: 'hip thrust machine form glute',
     ladder: ['hip-thrust-machine', 'barbell-hip-thrust'],
@@ -273,7 +280,7 @@ export const EXERCISES: Exercise[] = [
     ],
     cues: ['Push through your heels, squeeze at the top, chin tucked.', 'Lower until the plates almost touch, then go again.'],
     mistakes: [{ wrong: 'Bar sitting on the thighs rather than the hip crease.', fix: 'Roll it further up. Wrong position means it never loads the glutes.' }],
-    videoUrl: 'https://www.youtube.com/watch?v=6W-ViLupxKE',
+    videoUrl: 'https://www.youtube.com/watch?v=6W-ViLupxKE', // "HIP THRUST | How to Set Up + Form" — Naomi Kong
     videoLabel: 'Barbell hip thrust — setup',
     videoSearch: 'barbell hip thrust setup form',
     ladder: ['hip-thrust-machine', 'barbell-hip-thrust'],
@@ -303,7 +310,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Rounding the lower back to reach further.', fix: 'Range is limited by your hamstrings, not your spine. Stop where the back stays flat.' },
       { wrong: 'Weights drifting away from the legs.', fix: 'Keep them brushing your thighs. Distance multiplies the load on your back.' },
     ],
-    videoUrl: 'https://www.youtube.com/watch?v=3zqDris6lD4',
+    videoUrl: 'https://www.youtube.com/watch?v=3zqDris6lD4', // "Dumbbell Romanian Deadlift | Beginner Hip Hinge Strength & Movement Awareness" — Melanie RMT
     videoLabel: 'Dumbbell RDL — the hip hinge',
     videoSearch: 'dumbbell romanian deadlift RDL form beginner',
     ladder: ['back-extension', 'db-rdl', 'barbell-rdl'],
@@ -321,7 +328,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Take the bar out of a rack at hip height rather than lifting it from the floor.', 'Hands just outside the hips, feet hip width.'],
     cues: ['Same hinge as the dumbbell version.', 'Bar stays in contact with your legs the whole way down.'],
     mistakes: [{ wrong: 'Bar drifting forward.', fix: 'Pull it back into your legs. Think of shaving your thighs with it.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=JCXUYuzwNrM', // "How To: Romanian Deadlift (Barbell)" — ScottHermanFitness
     videoLabel: 'Barbell RDL — form',
     videoSearch: 'barbell romanian deadlift form',
     ladder: ['back-extension', 'db-rdl', 'barbell-rdl'],
@@ -346,7 +353,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Hyperextending at the top.', fix: 'Stop at straight. Past that, all the load lands on the lower back.' },
       { wrong: 'Pad set too high.', fix: 'Drop it below the hip bones or your hips cannot hinge.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=J3ommMKLzw8', // "45 Degree Back Extension (Glute focus)" — Elliott Upton
     videoLabel: 'Back extension — glute-biased setup',
     videoSearch: '45 degree back extension glute form',
     ladder: ['back-extension', 'db-rdl', 'barbell-rdl'],
@@ -371,7 +378,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Front foot too close to the bench.', fix: 'Step it further forward. Your front knee should not be shoved past your toes.' },
       { wrong: 'Adding weight before balance is there.', fix: 'Hold a rack upright with one hand for the first few sessions.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=SkNsa3eBwLA', // "How to do the BULGARIAN SPLIT SQUAT! | 2 Minute Tutorial" — Max Euceda
     videoLabel: 'Bulgarian split squat — foot placement',
     videoSearch: 'bulgarian split squat form beginner',
     ladder: ['bulgarian-split-squat'],
@@ -390,7 +397,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Sit tall with the pads against the outside of your knees.', 'Leaning the torso forward slightly biases the upper glute.'],
     cues: ['Push your knees apart, hold for a beat at the widest point, return slowly.'],
     mistakes: [{ wrong: 'Slamming the pads out and letting them snap back.', fix: 'Control both directions. The return is half the work.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=w3wq6lWAY2U', // "How to Use the Life Fitness Hip Abduction Machine (Correct Form & Setup)" — Fitness 19
     videoLabel: 'Hip abduction — form',
     videoSearch: 'hip abduction machine glute medius form',
     ladder: ['hip-abduction'],
@@ -408,7 +415,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Balls of the feet on the edge of the platform, heels hanging free.', 'Shoulder pads snug, legs straight but knees not locked.'],
     cues: ['Drop the heels as low as they will go for a full stretch, then rise all the way onto the toes.', 'Pause a second at both ends.'],
     mistakes: [{ wrong: 'Fast, bouncy half reps.', fix: 'Slow down and use the full range. Calves respond to stretch, not bounce.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=SVtg-1loH4c', // "How to PROPERLY Standing Calf Raise | Tips & Common Mistakes" — Colossus Fitness
     videoLabel: 'Calf raise — full range',
     videoSearch: 'standing calf raise machine form',
     ladder: ['standing-calf-raise'],
@@ -435,7 +442,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Seat too low, pressing upward.', fix: 'Raise it. The handles should line up with mid-chest.' },
       { wrong: 'Shoulders rolling forward at the end of the press.', fix: 'Keep the shoulder blades pinned back against the pad throughout.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=diaCJFttWDE', // "How To: Adjust Chest Press Machine" — Courtneyofitness
     videoLabel: 'Machine chest press — seat height',
     videoSearch: 'chest press machine seat height form',
     ladder: ['chest-press-machine', 'db-bench-press', 'barbell-bench-press'],
@@ -460,7 +467,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Elbows flared to 90 degrees.', fix: 'Tuck them to 45. Flaring is the most common way to end up with a sore shoulder.' },
       { wrong: 'Dropping the dumbbells at the end of the set.', fix: 'Sit up with them, then set them down. Practise with light weights.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=f1_LAtinmCo', // "Proper Dumbbell Setup: Chest Press" — Mind Pump TV
     videoLabel: 'DB bench press — getting into position',
     videoSearch: 'dumbbell bench press form beginner setup',
     ladder: ['chest-press-machine', 'db-bench-press', 'barbell-bench-press'],
@@ -478,7 +485,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Eyes under the bar, shoulder blades pinched, feet flat.', 'Set the safety bars at chest height whenever you train alone.'],
     cues: ['Lower to the lower chest, elbows tucked to 45 degrees.', 'Touch, then press back over the shoulders.'],
     mistakes: [{ wrong: 'Benching alone without safeties.', fix: 'Set them every time. It is the difference between a failed rep and a real problem.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=lWFknlOTbyM', // "How to do the BARBELL BENCH PRESS! | 2 Minute Tutorial" — Max Euceda
     videoLabel: 'Barbell bench — setup and safeties',
     videoSearch: 'barbell bench press form beginner',
     ladder: ['chest-press-machine', 'db-bench-press', 'barbell-bench-press'],
@@ -496,7 +503,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Seat height so the handles start at about ear or shoulder height.', 'Back flat against the pad, core braced.'],
     cues: ['Press up and slightly in.', 'Stop just short of lockout, lower under control to ear height.'],
     mistakes: [{ wrong: 'Arching the lower back to help.', fix: 'Brace, and lower the weight. An arch turns it into a bad incline press.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=3R14MnZbcpw', // "How to PROPERLY Shoulder Machine Press (LEARN FAST)" — Colossus Fitness
     videoLabel: 'Machine shoulder press — form',
     videoSearch: 'machine shoulder press form',
     ladder: ['machine-shoulder-press', 'seated-db-press', 'standing-barbell-press'],
@@ -514,7 +521,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Upright bench, back supported, dumbbells at ear height with palms forward.'],
     cues: ['Press up until the dumbbells nearly touch.', 'Ribs down, do not let the back arch.'],
     mistakes: [{ wrong: 'Starting too low.', fix: 'Ear height is the start. Deeper puts the shoulder joint in a bad spot under load.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=1jYq9QQEWqE', // "How to Perform Seated Dumbbell Shoulder Press" — Buff Dudes Workouts
     videoLabel: 'Seated DB press — form',
     videoSearch: 'seated dumbbell shoulder press form',
     ladder: ['machine-shoulder-press', 'seated-db-press', 'standing-barbell-press'],
@@ -532,7 +539,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Bar on the front shoulders, hands just outside shoulder width, elbows slightly in front of the bar.'],
     cues: ['Squeeze the glutes and brace hard — this is a full-body lift.', 'Move your head back slightly to let the bar pass, then push it overhead.'],
     mistakes: [{ wrong: 'Leaning back to press.', fix: 'Brace the core and squeeze the glutes. The body stays a rigid column.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=2yjwXTZQDDI', // "How To: Standing Straight-Bar Military / Overhead Press" — ScottHermanFitness
     videoLabel: 'Overhead press — bracing',
     videoSearch: 'standing barbell overhead press form beginner',
     ladder: ['machine-shoulder-press', 'seated-db-press', 'standing-barbell-press'],
@@ -562,7 +569,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Pulling the bar behind the neck.', fix: 'To the front, at the upper chest. Behind the neck is unnecessary and hard on the shoulder.' },
       { wrong: 'Feeling it all in the biceps.', fix: 'Lead with the elbows and start each rep with the shoulder blade, not the hand.' },
     ],
-    videoUrl: 'https://www.youtube.com/watch?v=AOpi-p0cJkc',
+    videoUrl: 'https://www.youtube.com/watch?v=AOpi-p0cJkc', // "Beginner's Guide: Lat Pulldown" — SilverSneakers
     videoLabel: 'Lat pulldown — leading with the elbows',
     videoSearch: 'lat pulldown proper form beginner mind muscle',
     ladder: ['lat-pulldown', 'assisted-pull-up', 'pull-up'],
@@ -580,7 +587,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Kneel or stand on the pad. More assistance weight makes it easier — this stack works backwards from every other machine.', 'Grip slightly wider than shoulders.'],
     cues: ['Shoulders down first, then pull until your chin clears the bar.', 'Lower all the way under control.'],
     mistakes: [{ wrong: 'Reducing assistance too fast.', fix: 'Drop it 5 kg at a time, and only once you can do all your sets at the top of the rep range.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=gx0RWT7WbmA', // "How To PROPERLY Use The Assisted Pull Up Machine (DO MORE PULL UPS)" — Colossus Fitness
     videoLabel: 'Assisted pull-up — progressing off the machine',
     videoSearch: 'assisted pull up machine form progression',
     ladder: ['lat-pulldown', 'assisted-pull-up', 'pull-up'],
@@ -598,7 +605,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Hands slightly wider than shoulders, palms forward, hanging with arms straight.'],
     cues: ['Pull the shoulder blades down first, then drive the elbows to your ribs.', 'Chin over the bar, then lower all the way.'],
     mistakes: [{ wrong: 'Half reps from a bent-arm start.', fix: 'Full hang every rep. Fewer good ones beat more partial ones.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=6zyx46Vpato', // "How To Get Your First Pull Up (Beginner Tutorial)" — nourishmovelove
     videoLabel: 'Pull-up — the progression',
     videoSearch: 'first pull up progression women',
     ladder: ['lat-pulldown', 'assisted-pull-up', 'pull-up'],
@@ -619,7 +626,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Rowing with the whole torso swinging back and forth.', fix: 'The torso stays almost still. If it is swinging, the weight is too heavy.' },
       { wrong: 'Shrugging at the top.', fix: 'Pull back and down, not up.' },
     ],
-    videoUrl: 'https://www.youtube.com/watch?v=EU7bOadUsNI',
+    videoUrl: 'https://www.youtube.com/watch?v=EU7bOadUsNI', // "Seated Cable Row - Proper Form & Technique [4K]" — Steev
     videoLabel: 'Cable row — squeezing the shoulder blades',
     videoSearch: 'seated cable row proper form back',
     ladder: ['seated-cable-row', 'chest-supported-row', 'barbell-row'],
@@ -637,7 +644,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Set an incline bench to about 45 degrees and lie face down on it, chest supported.', 'Dumbbells hanging straight down.'],
     cues: ['Row the dumbbells towards your hips, elbows close to the body.', 'Squeeze at the top, lower slowly.'],
     mistakes: [{ wrong: 'Lifting the chest off the bench to help.', fix: 'Chest stays down. The support is the point — it stops your lower back cheating.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=ym-Mp8tCF00', // "HOW TO CHEST SUPPORTED DUMBBELL ROW" — BEN MIGHTY
     videoLabel: 'Chest-supported row — form',
     videoSearch: 'chest supported dumbbell row incline bench form',
     ladder: ['seated-cable-row', 'chest-supported-row', 'barbell-row'],
@@ -655,7 +662,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Hinge forward to about 45 degrees with a flat back, bar hanging at arms length.'],
     cues: ['Row to the belly button, elbows tucked.', 'Hold the torso angle still for the whole set.'],
     mistakes: [{ wrong: 'Standing up as the set gets hard.', fix: 'Lower the weight. The angle holding still is what makes it a row.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=FWJR5Ve8bnQ', // "How to do the BENT-OVER BARBELL ROW! | 2 Minute Tutorial" — Max Euceda
     videoLabel: 'Barbell row — form',
     videoSearch: 'barbell row form beginner',
     ladder: ['seated-cable-row', 'chest-supported-row', 'barbell-row'],
@@ -673,7 +680,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Bench at 30 degrees — higher than that and it becomes a shoulder press.', 'Shoulder blades pinned back, dumbbells at chest height.'],
     cues: ['Press up and slightly together.', 'Lower until you feel a stretch across the upper chest.'],
     mistakes: [{ wrong: 'Bench set too steep.', fix: '30 degrees. Most benches have a notch marked for it.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=IP4oeKh1Sd4', // "How to do the INCLINE DUMBBELL BENCH PRESS! | 2 Minute Tutorial" — Max Euceda
     videoLabel: 'Incline DB press — bench angle',
     videoSearch: 'incline dumbbell press 30 degrees form',
     ladder: ['incline-db-press'],
@@ -701,7 +708,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Going far too heavy and swinging.', fix: 'This is a small muscle. 2.5 to 5 kg is a real working weight, and that is fine.' },
       { wrong: 'Shrugging the shoulder up.', fix: 'Keep the shoulder pressed down. If it rises, the traps have taken over.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=qitQHqNZbeM', // "How to PROPERLY Cable Lateral Raise (TRY THIS!)" — Colossus Fitness
     videoLabel: 'Cable lateral raise — shoulder width',
     videoSearch: 'cable lateral raise side delt form',
     ladder: ['db-lateral-raise', 'cable-lateral-raise'],
@@ -729,7 +736,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Swinging the weights up with a bounce from the knees.', fix: 'Go lighter. If your body moves, the shoulders are not doing it.' },
       { wrong: 'Raising above shoulder height.', fix: 'Stop level with your shoulders. Past that the traps take over.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=3VcKaXpzqRo', // "How To: Dumbbell Side Lateral Raise" — ScottHermanFitness
     videoLabel: 'DB lateral raise — the width builder',
     videoSearch: 'dumbbell lateral raise form side delt',
     // Dumbbells are simpler to get hold of; the cable is the progression, because
@@ -749,7 +756,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Rope attachment set at roughly face height.', 'Step back until there is tension with your arms straight.'],
     cues: ['Pull the rope towards your forehead, splitting your hands apart as you go.', 'Finish with your knuckles beside your ears and elbows high.'],
     mistakes: [{ wrong: 'Pulling it to the chest like a row.', fix: 'Elbows high, hands to the ears. Higher than feels natural.' }],
-    videoUrl: 'https://www.youtube.com/watch?v=3pToT5_DUiY',
+    videoUrl: 'https://www.youtube.com/watch?v=3pToT5_DUiY', // "How To Properly Perform Face Pulls For Rear Delts / Fix Your Form" — Colossus Fitness
     videoLabel: 'Face pull — posture insurance',
     videoSearch: 'face pull rope form rear delt',
     ladder: ['face-pull'],
@@ -767,7 +774,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Rope or bar at the top pulley.', 'Stand close, elbows pinned to your sides, small forward lean.'],
     cues: ['Only the forearms move. Straighten fully and squeeze.', 'Let the weight come up until your forearms are past parallel.'],
     mistakes: [{ wrong: 'Elbows drifting forward and away from the body.', fix: 'Pin them to your ribs. If they move, the back and chest are helping.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=-zLyUAo1gMw', // "How to do the CABLE TRICEP PUSHDOWN! | 2 Minute Tutorial" — Max Euceda
     videoLabel: 'Pushdown — elbow position',
     videoSearch: 'triceps pushdown cable form',
     ladder: ['triceps-pushdown'],
@@ -785,7 +792,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Bar at the low pulley, elbows at your sides, standing tall.'],
     cues: ['Curl up without letting the elbows travel forward.', 'Lower slowly all the way to straight.'],
     mistakes: [{ wrong: 'Swinging the body to start each rep.', fix: 'Stand against a wall or drop the weight.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=2MUEL4nL6hA', // "How to PROPERLY Cable Bicep Curl For Bigger Biceps (EASY FIX)" — Colossus Fitness
     videoLabel: 'Cable curl — form',
     videoSearch: 'cable biceps curl form',
     ladder: ['db-curl', 'cable-curl'],
@@ -814,7 +821,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Leaning away to get the leg higher.', fix: 'Height is not the point. Stay upright and go only as far as the hip allows.' },
       { wrong: 'Turning the toes out.', fix: 'Toes forward keeps it on the side of the glute rather than the front of the hip.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=pvnR8CDb4BU', // "How to Do Cable Hip Abduction Exercise" — LIVESTRONG
     videoLabel: 'Standing cable abduction — form',
     videoSearch: 'standing cable hip abduction form glute medius',
     ladder: ['standing-cable-abduction'],
@@ -841,7 +848,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Short, bouncy reps.', fix: 'Full range, pause at both ends. Calves respond to stretch, not bounce.' },
       { wrong: 'Pad sitting on the kneecap.', fix: 'Move it back onto the thigh — on the kneecap it is just painful.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=pz66Bw6HJ4s', // "Seated Calf Raise Machine Tutorial" — The Gym In The North
     videoLabel: 'Seated calf raise — form',
     videoSearch: 'seated calf raise machine proper form',
     ladder: ['seated-calf-raise'],
@@ -862,7 +869,7 @@ export const EXERCISES: Exercise[] = [
     ],
     cues: ['Lower the heel for a deep stretch, then push all the way up.', 'Slow on the way down.'],
     mistakes: [{ wrong: 'Bouncing off the bottom.', fix: 'Pause at the stretch for a second before you push.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=ORT4oJ_R8Qs', // "How To: Single-Leg Calf Raise" — ScottHermanFitness
     videoLabel: 'Single-leg calf raise — form',
     videoSearch: 'single leg calf raise form',
     ladder: ['single-leg-calf-raise'],
@@ -889,7 +896,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Elbows flaring out to the sides.', fix: 'Keep them pointing forward. Flaring turns it into a shoulder movement.' },
       { wrong: 'Whole body rocking.', fix: 'Stagger the stance and drop the weight. Only the forearms move.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=mRozZKkGIfg', // "Cable Rope Overhead Tricep Extension" — Bodybuilding.com
     videoLabel: 'Overhead triceps extension — form',
     videoSearch: 'cable overhead triceps extension rope form',
     ladder: ['overhead-triceps-extension'],
@@ -916,7 +923,7 @@ export const EXERCISES: Exercise[] = [
       { wrong: 'Swinging the weights up with the back.', fix: 'Stand against a wall. If your shoulders touch it the whole set, you are being honest.' },
       { wrong: 'Stopping halfway down.', fix: 'Full extension every rep, even if it means less weight.' },
     ],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=av7-8igSXTs', // "How to Do Standing Dumbbell Curls" — LIVESTRONG
     videoLabel: 'Dumbbell curl — form',
     videoSearch: 'dumbbell biceps curl proper form',
     ladder: ['db-curl', 'cable-curl'],
@@ -935,7 +942,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Forearms on the floor under your shoulders, feet hip width.'],
     cues: ['Squeeze the glutes and tuck the hips slightly so the lower back flattens.', 'A hard 20 seconds beats a sagging two minutes.'],
     mistakes: [{ wrong: 'Hips sagging towards the floor.', fix: 'Tuck the hips and squeeze the glutes. Stop the set when the sag starts.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=A2b2EmIg0dA', // "How To Plank (Proper Form | Cues | Progressions)" — E3 Rehab
     videoLabel: 'Plank — bracing properly',
     videoSearch: 'plank proper form hollow',
     ladder: ['plank'],
@@ -953,7 +960,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['On your back, arms straight up, knees bent at 90 degrees above the hips.'],
     cues: ['Press the lower back flat into the floor and keep it there.', 'Lower one arm and the opposite leg slowly, then swap.'],
     mistakes: [{ wrong: 'Lower back arching off the floor.', fix: 'Reduce the range. Only go as far as you can hold the back flat.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=GbSC02oU3To', // "How to Do a Dead Bug: A Guide from Physical Therapists" — Hinge Health
     videoLabel: 'Dead bug — form',
     videoSearch: 'dead bug exercise form core',
     ladder: ['dead-bug'],
@@ -971,7 +978,7 @@ export const EXERCISES: Exercise[] = [
     setup: ['Pulley at shoulder height, kneel side-on with the inside knee up.'],
     cues: ['Rotate from the ribcage, hips stay square and still.', 'Slow and controlled both ways.'],
     mistakes: [{ wrong: 'Turning the hips with the torso.', fix: 'Lock the hips. The rotation is the exercise.' }],
-    videoUrl: '',
+    videoUrl: 'https://www.youtube.com/watch?v=c1m8jdJaaS8', // "Half-Kneeling Cable Chop" — Synchronicity Health
     videoLabel: 'Cable chop — anti-rotation',
     videoSearch: 'half kneeling cable chop core form',
     ladder: ['cable-woodchop'],
