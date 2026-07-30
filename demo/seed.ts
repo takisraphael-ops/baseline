@@ -11,16 +11,19 @@ import { rockportVo2 } from '@/lib/train/vo2';
 import { load, save } from '@/lib/train/store';
 import type { LoggedSet, Profile, SessionLog, TrainState } from '@/lib/train/types';
 
-const PROFILE: Profile = {
-  name: 'Diva',
-  age: 25,
-  weightKg: 62,
-  restingHr: 60,
-  sex: 'female',
-  startDate: '2026-07-08',
-  parqCleared: true,
-  walkMinutesEachWay: 20,
-  quiz: {
+/**
+ * The sample athlete, built on demand rather than held in a module-level const.
+ *
+ * That is not a style choice. A top-level `PROFILE.strengthIndex = ...` is a
+ * side-effecting statement, and esbuild cannot prove it is safe to drop — so it
+ * retains the statement and the whole object with it, and the sample athlete's
+ * name, age, body mass and resting heart rate end up in the `--client` bundle
+ * that is served publicly, even though nothing there ever reads them. Built
+ * inside a function, this disappears with `seedIfEmpty()` when `__PREVIEW__`
+ * is false, exactly as `buildLogs` already does.
+ */
+function buildProfile(): Profile {
+  const quiz: NonNullable<Profile['quiz']> = {
     experience: 'dabbled',
     activity: 'walker',
     pressUps: 'few',
@@ -29,10 +32,22 @@ const PROFILE: Profile = {
     hang: '10to30',
     confidence: 'some',
     niggles: ['none'],
-  },
-  strengthIndex: 0, // filled below from the answers themselves
-};
-PROFILE.strengthIndex = strengthIndex(PROFILE.quiz!);
+  };
+  return {
+    name: 'Sample',
+    age: 25,
+    weightKg: 62,
+    restingHr: 60,
+    sex: 'female',
+    startDate: '2026-07-08',
+    parqCleared: true,
+    walkMinutesEachWay: 20,
+    quiz,
+    // Derived from the answers themselves rather than hardcoded, so the seeded
+    // starting loads match what the quiz would actually have produced.
+    strengthIndex: strengthIndex(quiz),
+  };
+}
 
 function isoDaysAgo(n: number): string {
   const d = new Date();
@@ -109,7 +124,7 @@ export function seedIfEmpty(): void {
 
   const state: TrainState = {
     version: 1,
-    profile: PROFILE,
+    profile: buildProfile(),
     logs: buildLogs(),
     tests: [
       { date: isoDaysAgo(23), kind: 'rockport', timeMin: 15.4, hrBpm: 152, vo2max: rockportVo2(62, 25, 'female', 15.4, 152) },

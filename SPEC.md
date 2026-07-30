@@ -249,14 +249,21 @@ then add load and drop back to the bottom. The app never asks what weight to
 use — it computes the target from history and shows it, with the reason.
 
 **The machine-stack fallback.** This is the feature that matters most for her.
-Machine stacks jump 5-7 kg; on a lateral raise at 5 kg that is a 50% increase,
-and the textbook rule is unusable. When the next increment exceeds **10% of
-current load**, load is held and a different lever is pulled, in order:
+Machine stacks jump 5-7 kg and cable pins 2.5 kg; on a cable lateral raise
+starting at 2.5 kg, one pin is a 100% increase, and the textbook rule is
+unusable. When the next increment exceeds **25% of current load**
+(`INCREMENT_CEILING`), load is held and a different lever is pulled, in order:
 
 1. Extend the rep range by 2
 2. Add a set
 3. Slow the eccentric to 3 seconds (machines and cables)
 4. Micro-load, or move to a dumbbell variant with 1-2 kg jumps
+
+There is a second, higher threshold. Above **75%** (`ABSURD_JUMP`) the next
+plate is close to a doubling, so the engine stops taking it at all and offers an
+extra set or micro-loading instead. Both constants are tuned rather than
+arbitrary: a ceiling of 10% was tried and vetoed every loaded exercise in the
+library, because 5 kg on a 40 kg leg press is already 12.5%.
 
 The reason is shown inline, never hidden: *"Next plate is +2.5 kg — a 50% jump,
 too big to take cleanly. Staying at 5 kg and extending to 17 reps instead."*
@@ -282,8 +289,8 @@ better than a flat percentage of max.
 | 1 Recovery | 50-60% | 125-138 | Full conversation, no effort |
 | 2 Aerobic base | 60-70% | 138-151 | Full sentences, would not want to sing |
 | 3 Tempo | 70-80% | 151-164 | Short sentences only |
-| 4 Threshold | 80-90% | 164-178 | A few words |
-| 5 VO2 max | 90-100% | 178-191 | Cannot speak |
+| 4 Threshold | 80-90% | 164-177 | A few words |
+| 5 VO2 max | 90-100% | 177-191 | Cannot speak |
 
 Zone 2 reads as **73-79% of max HR** on a treadmill console, which shows a share
 of max rather than reserve. Both are displayed to prevent the mismatch, and the
@@ -352,9 +359,11 @@ it. The optional "how did that feel?" field is never scored or interpreted.
 
 ## 7. Known gaps
 
-1. **Video links are YouTube searches, not curated videos.** A search never
-   rots and always returns something relevant, but a hand-picked video would be
-   better. The field shape does not change when they are swapped in.
+1. **A curated video can be pulled at any time.** All 41 are now hand-picked
+   ids, each verified through YouTube's oembed endpoint with the resolved title
+   recorded beside it. What cannot be fixed at build time is an upload being
+   deleted later, which is why the search fallback stays wired up behind
+   `demoUrl()` rather than being retired.
 2. **Starting weights are estimates.** `Exercise.startKg` is a reasonable guess
    for an untrained adult; the first session is explicitly framed as a rehearsal
    and the engine corrects from real data immediately after.
