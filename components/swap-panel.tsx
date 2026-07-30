@@ -48,7 +48,7 @@ export default function SwapPanel({
                 className="w-full flex items-center gap-3 text-left rounded-[10px] px-2.5 py-2"
                 style={{ background: 'var(--bg-elev)', border: '1px solid var(--border)', minHeight: 56 }}
               >
-                <MuscleMap primary={exercise.primary} secondary={exercise.secondary} className="w-9 shrink-0" />
+                <MuscleMap primary={exercise.primary} secondary={exercise.secondary} className="w-9 shrink-0" decorative />
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold text-sm leading-tight">{exercise.name}</span>
                   <span className="block text-[12px] muted leading-tight mt-0.5">

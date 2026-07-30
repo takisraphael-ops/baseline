@@ -38,6 +38,9 @@ export const INCREMENT_CEILING = 0.25;
  */
 const ABSURD_JUMP = 0.75;
 
+/** Lowering time the tempo lever prescribes, seconds. */
+export const TEMPO_SEC = 3;
+
 /** Consecutive non-progressing sessions before a deload is prescribed. */
 export const STALL_LIMIT = 2;
 
@@ -236,6 +239,21 @@ export function nextTarget(
           reason: `The next plate is +${ex.incrementKg} kg — a ${pct}% jump, near enough to doubling. Same weight, one extra set instead; more total work is progress just as much as more load is.`,
         };
       }
+      // Lever 3: slow the lowering. Time under tension is real progression when
+      // the stack cannot give a smaller step, and it costs nothing to try — so
+      // it goes before sending her out to buy micro-plates. Machines and cables
+      // only: a controlled 3-second eccentric on a free-weight lift is a
+      // technique cue rather than something to prescribe blind.
+      const onAStack = ex.equipment === 'machine' || ex.equipment === 'cable';
+      if (onAStack && !last.sets.some((s) => (s.eccentricSec ?? 0) >= TEMPO_SEC)) {
+        return {
+          kg,
+          reps: last.sets.map((s) => s.reps),
+          lever: 'tempo',
+          eccentricSec: TEMPO_SEC,
+          reason: `+${ex.incrementKg} kg would be a ${pct}% jump, near enough to doubling. Same weight and same reps, but lower for a slow ${TEMPO_SEC} seconds on every rep — the set gets harder without the stack having to cooperate.`,
+        };
+      }
       return {
         kg,
         reps: last.sets.map((s) => s.reps),
@@ -268,6 +286,12 @@ export function nextTarget(
   // cautious and behaves as a stall: the "all sets at the ceiling" test can
   // never pass again, so the load stops moving every time a block changes.
   while (reps.length < target.sets) reps.push(reps[reps.length - 1] ?? target.repMin);
+  // And the other direction. The array is seeded from the last session, so
+  // without this a deload week inherits its set count from the week before and
+  // prescribes three sets under a banner promising about 40% fewer. The same
+  // applies to a 2-set prime whose history was logged as a 3-set accessory:
+  // `target.sets` is what the block asked for, so it wins.
+  if (reps.length > target.sets) reps.length = target.sets;
 
   // How big a step, from what she said it felt like. A fixed +1 ignores the one
   // piece of information only she has, and gets it wrong in both directions:

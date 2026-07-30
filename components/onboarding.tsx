@@ -86,7 +86,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
             Hi Diva — let&rsquo;s work out where you&rsquo;re starting from.
           </h1>
           <p className="muted mt-2 text-sm">
-            Ten questions, about two minutes. They set your starting weight on every machine, so your
+            Eight questions, about two minutes. They set your starting weight on every machine, so your
             first session opens with numbers that suit you rather than a guess.
           </p>
         </header>
@@ -149,7 +149,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
           </div>
         )}
         <div className="flex gap-3">
-          <button onClick={() => setStage('welcome')} className="btn btn-ghost"><ArrowLeft size={16} /></button>
+          <button onClick={() => setStage('welcome')} className="btn btn-ghost" aria-label="Back"><ArrowLeft size={16} /></button>
           <button onClick={() => setStage('numbers')} className="btn btn-primary flex-1">
             Continue <ArrowRight size={16} />
           </button>
@@ -203,7 +203,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
           </p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => setStage('parq')} className="btn btn-ghost"><ArrowLeft size={16} /></button>
+          <button onClick={() => setStage('parq')} className="btn btn-ghost" aria-label="Back"><ArrowLeft size={16} /></button>
           <button onClick={() => setStage('quiz')} disabled={!age || !weightKg} className="btn btn-primary flex-1">
             Continue <ArrowRight size={16} />
           </button>
@@ -276,6 +276,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
           <button
             onClick={() => (qIndex === 0 ? setStage('numbers') : setQIndex((n) => n - 1))}
             className="btn btn-ghost"
+            aria-label="Back"
           >
             <ArrowLeft size={16} />
           </button>

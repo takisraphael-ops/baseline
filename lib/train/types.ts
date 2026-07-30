@@ -115,6 +115,14 @@ export interface LoggedSet {
   reps: number;
   /** Reps in reserve she reported. null when not recorded. */
   rir: number | null;
+  /**
+   * Seconds spent lowering, when the tempo lever was prescribed for this set.
+   * Absent on every set that was not, including all sets logged before the
+   * lever existed — which is why it is optional rather than defaulted.
+   * `nextTarget` reads it to tell "already slowed the eccentric and still
+   * cannot take the plate" apart from "has not tried that yet".
+   */
+  eccentricSec?: number;
 }
 
 export interface LoggedExercise {

@@ -17,7 +17,7 @@
 // Supersets are antagonist pairs only until week 9 — one muscle rests while the
 // other works, so the session compresses without a strength cost.
 
-import type { BlockSpec, SessionSpec, SetTarget } from './types';
+import type { BlockSpec, Role, SessionSpec, SetTarget } from './types';
 
 export const TOTAL_WEEKS = 12;
 
@@ -190,15 +190,23 @@ export function intervalsForWeek(week: number): SessionSpec['cardio'] {
   return { kind: 'intervals', minutes: 28, intervals: { workSec: 240, restSec: 180, rounds: 4, zone: 5 }, note: 'The 4x4. Four minutes near maximum, three minutes easy, four times. This is the protocol that raises VO2 max.' };
 }
 
-/** Apply the block's set scaling and RIR to a slot's base target. */
-export function scaleTarget(base: SetTarget, week: number): SetTarget {
+/**
+ * Apply the block's set scaling and RIR to a slot's base target.
+ *
+ * Priming slots keep the RIR they were authored with. The block RIR describes
+ * how hard the working sets should be, and by block 3 that is 1 — which, applied
+ * to a prime, prints "stop with about 1 left" directly above the note calling it
+ * a rehearsal rather than a set. Pass `role` so a prime is exempt; the set
+ * scaling still applies to it either way.
+ */
+export function scaleTarget(base: SetTarget, week: number, role?: Role): SetTarget {
   const block = blockForWeek(week);
   const deload = isDeloadWeek(week);
   const scale = deload ? block.setScale * 0.6 : block.setScale;
   return {
     ...base,
     sets: Math.max(1, Math.round(base.sets * scale)),
-    rir: deload ? block.rir + 2 : block.rir,
+    rir: role === 'prime' ? base.rir : deload ? block.rir + 2 : block.rir,
   };
 }
 

@@ -3,13 +3,17 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Download, Upload } from 'lucide-react';
-import { clearAll, exportJson, importJson, isEphemeral, load, saveProfile, todayISO } from '@/lib/train/store';
+import { clearAll, exportJson, isEphemeral, load, parseImport, save, saveProfile, todayISO } from '@/lib/train/store';
 import type { TrainState } from '@/lib/train/types';
 
 export default function SettingsPage() {
   const [state, setState] = useState<TrainState | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  // Parsed but not yet saved. Replacing the log is the most destructive thing in
+  // the app — more so than "Delete all data", which asks first — and localStorage
+  // is the only copy, so it asks here too.
+  const [pending, setPending] = useState<{ state: TrainState; name: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -27,24 +31,41 @@ export default function SettingsPage() {
   };
 
   const download = () => {
+    const name = `baseline-${todayISO()}.json`;
     const blob = new Blob([exportJson(state)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `baseline-${todayISO()}.json`;
+    a.download = name;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    // Revoking in the same tick can cancel the download before it starts in
+    // some browsers. This is the only backup the app has, so it waits.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    // Without this, a download the browser silently blocked is indistinguishable
+    // from one that worked.
+    setMsg(`Saved ${name}`);
   };
 
   const upload = async (file: File) => {
     const text = await file.text();
-    const next = importJson(text);
+    const next = parseImport(text);
     if (next) {
-      setState(next);
-      setMsg('Imported.');
+      setPending({ state: next, name: file.name });
+      setMsg(null);
     } else {
+      setPending(null);
       setMsg('That file could not be read. Nothing was changed.');
     }
+  };
+
+  const confirmImport = () => {
+    if (!pending) return;
+    save(pending.state);
+    setState(load());
+    setPending(null);
+    setMsg('Imported.');
   };
 
   return (
@@ -115,12 +136,29 @@ export default function SettingsPage() {
             e.target.value = '';
           }}
         />
-        {msg && <p className="text-sm mt-2" style={{ color: 'var(--accent)' }}>{msg}</p>}
+        {pending && (
+          <div className="card mt-3" style={{ borderColor: 'var(--state-warn)' }}>
+            <p className="text-sm">
+              <strong>{pending.name}</strong> holds {pending.state.logs.length} sessions and{' '}
+              {pending.state.tests.length} cardio tests. Importing replaces everything on this device
+              — your {state.logs.length} stored sessions — and cannot be undone.
+            </p>
+            <div className="flex gap-3 mt-3">
+              <button onClick={() => setPending(null)} className="btn btn-ghost flex-1 text-sm">Cancel</button>
+              <button onClick={confirmImport} className="btn btn-danger flex-1 text-sm">Replace my data</button>
+            </div>
+          </div>
+        )}
+        {/* Rendered unconditionally: a live region has to be in the DOM before
+            the text arrives, or a screen reader announces nothing. */}
+        <p className="text-sm mt-2" style={{ color: 'var(--accent)' }} role="status" aria-live="polite">
+          {msg}
+        </p>
         <p className="text-xs muted mt-2">
           {state.logs.length} sessions · {state.tests.length} cardio tests stored.
         </p>
         {isEphemeral() && (
-          <p className="text-sm mt-2" style={{ color: 'var(--warning)' }}>
+          <p className="text-sm mt-2" style={{ color: 'var(--state-warn)' }}>
             This browser is not letting the app save to storage, so anything you log will be lost
             when you close the tab. Export before you leave, or open it in a normal tab.
           </p>

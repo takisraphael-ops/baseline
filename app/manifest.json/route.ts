@@ -9,7 +9,9 @@ export function GET() {
       start_url: '/',
       display: 'standalone',
       background_color: '#FAFAF9',
-      theme_color: '#4F46E5',
+      // The app's accent. This was the indigo the project template shipped
+      // with, which is not a colour that appears anywhere in the app.
+      theme_color: '#0a7683',
       icons: [
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
         { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },

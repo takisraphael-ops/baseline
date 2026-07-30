@@ -200,6 +200,12 @@ h3 { font-size: 16px; }
   width: 100%;
   padding: 10px 12px;
   min-height: 44px;
+  /* iOS Safari zooms the whole page in whenever a focused control is under
+     16px, and does not zoom back out. Body text is 15px and `font: inherit`
+     below passes that to every control, so without this every field tap during
+     onboarding or a set shoves the layout sideways. The fix is the font size,
+     not maximum-scale — suppressing zoom entirely fails WCAG 1.4.4. */
+  font-size: 16px;
   background: var(--bg-elev);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -262,7 +268,9 @@ h3 { font-size: 16px; }
   border-radius: 0;
   padding-left: 2px;
   padding-right: 2px;
-  font-size: 15px;
+  /* 16px for the same reason as `.input` — this is the field she taps most,
+     between sets, and it is the worst place for the page to jump. */
+  font-size: 16px;
 }
 
 /* ================================================================ buttons */

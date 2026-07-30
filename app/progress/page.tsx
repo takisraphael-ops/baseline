@@ -128,7 +128,16 @@ export default function ProgressPage() {
             </div>
             {lastKg > firstKg && (
               <p className="text-sm mt-2" style={{ color: 'var(--success)' }}>
-                {firstKg} kg → {lastKg} kg. That is +{Math.round(((lastKg - firstKg) / firstKg) * 100)}% since you started.
+                {firstKg > 0 ? (
+                  <>
+                    {firstKg} kg → {lastKg} kg. That is +{Math.round(((lastKg - firstKg) / firstKg) * 100)}% since you started.
+                  </>
+                ) : (
+                  // Lifts that start at bodyweight have a zero first entry, and a
+                  // percentage of zero is Infinity — which rendered literally as
+                  // "+Infinity%". The kg range says the same thing without it.
+                  <>bodyweight → {lastKg} kg since you started.</>
+                )}
               </p>
             )}
           </>

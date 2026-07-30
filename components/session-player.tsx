@@ -69,8 +69,13 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
     const factor = p ? strengthFactor(p.strengthIndex) : 1;
     return session.slots.map((slot) => {
       const ex = getExercise(swaps[slot.exerciseId] ?? slot.exerciseId);
-      const target = scaleTarget(slot.target, week);
-      const history = historyFor(state, slot.exerciseId);
+      const target = scaleTarget(slot.target, week, slot.role);
+      // Keyed on the exercise actually being performed, not the slot's original.
+      // After a swap those differ, and reading the original's history would
+      // prescribe a leg-press weight on a goblet squat. With no swap the two ids
+      // are identical; on a first-ever swap this is empty and the decision falls
+      // through to the substitute's own starting load.
+      const history = historyFor(state, ex.id);
       const start = p ? startingLoad(ex, p.weightKg, factor) : ex.startKg;
       // Heaviest she has ever logged on this movement, so a new one can be
       // called out the moment it happens rather than found later in a chart.
@@ -155,16 +160,26 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
   };
 
   const mainPlan = plan.find((p) => p.slot.role === 'main');
-  const totalSets = Object.values(doneFlags).reduce((n, f) => n + f.length, 0);
-  const doneSets = Object.values(doneFlags).reduce((n, f) => n + f.filter(Boolean).length, 0);
+  // Counted over `plan`, not over every key in `doneFlags`. A swap leaves the
+  // original exercise's rows behind — `undoSwap` deliberately keeps them so an
+  // undo restores the ticks — and counting those too means the meter is scored
+  // against sets that are no longer in the session and that `finish()` never
+  // writes, so it could never reach 100%.
+  const totalSets = plan.reduce((n, { ex }) => n + (doneFlags[ex.id]?.length ?? 0), 0);
+  const doneSets = plan.reduce((n, { ex }) => n + (doneFlags[ex.id] ?? []).filter(Boolean).length, 0);
   const pct = totalSets > 0 ? (doneSets / totalSets) * 100 : 0;
 
   const finish = () => {
     setFinishing(true);
     const exercises = plan
-      .map(({ ex }) => ({
+      .map(({ ex, decision }) => ({
         exerciseId: ex.id,
-        sets: (logged[ex.id] ?? []).filter((_, i) => doneFlags[ex.id]?.[i]),
+        sets: (logged[ex.id] ?? [])
+          .filter((_, i) => doneFlags[ex.id]?.[i])
+          // Record the slow lowering when it was prescribed, so next session can
+          // see it was already tried. Without this the tempo lever would be the
+          // last word forever and micro-loading could never be reached.
+          .map((s) => (decision.eccentricSec ? { ...s, eccentricSec: decision.eccentricSec } : s)),
       }))
       .filter((e) => e.sets.length > 0);
     appendLog({
@@ -376,7 +391,7 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
             )}
 
             {decision.eccentricSec && (
-              <p className="text-sm mt-2.5" style={{ color: 'var(--warn)' }}>
+              <p className="text-sm mt-2.5" style={{ color: 'var(--state-warn)' }}>
                 Lower for a slow {decision.eccentricSec} seconds on every rep.
               </p>
             )}
