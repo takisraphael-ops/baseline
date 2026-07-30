@@ -100,7 +100,14 @@ export function appendTest(test: CardioTest): TrainState {
 /** Previous sessions for one exercise, most recent first. Feeds the progression engine. */
 export function historyFor(state: TrainState, exerciseId: string): LoggedExercise[] {
   return [...state.logs]
-    .sort((a, b) => b.date.localeCompare(a.date))
+    // `date` stays the primary key: it is a local calendar day while
+    // `completedAt` is a UTC instant, so ordering on the timestamp first can
+    // swap two sessions either side of midnight. The tiebreak matters because
+    // sort is stable — two sessions logged on the same day would otherwise come
+    // back oldest-first, the exact opposite of what this promises, and the
+    // engine would read the earlier one as "last time" and score the heavier
+    // later session as a regression.
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
     .flatMap((l) => l.exercises.filter((e) => e.exerciseId === exerciseId));
 }
 
@@ -108,21 +115,61 @@ export function exportJson(state: TrainState): string {
   return JSON.stringify(state, null, 2);
 }
 
-export function importJson(text: string): TrainState | null {
+/**
+ * Validate an exported file without writing anything.
+ *
+ * Split out from `importJson` so the caller can show what it is about to
+ * replace before replacing it. This is the only path that persists a file the
+ * app did not write, so it checks the shape properly rather than trusting two
+ * top-level fields: `{"version":1,"logs":[{}]}` used to be accepted, and then
+ * every screen that walked a log threw on reload — which reads as a broken app
+ * rather than a bad file, and by then the real history is already gone.
+ *
+ * `load()` stays lenient by contrast: data the app wrote itself is trusted.
+ */
+export function parseImport(text: string): TrainState | null {
   try {
     const parsed = JSON.parse(text) as TrainState;
     if (typeof parsed?.version !== 'number' || !Array.isArray(parsed?.logs)) return null;
-    const next: TrainState = {
+
+    const logsOk = parsed.logs.every(
+      (l) =>
+        l != null &&
+        typeof l.date === 'string' &&
+        Array.isArray(l.exercises) &&
+        l.exercises.every((e) => e != null && typeof e.exerciseId === 'string' && Array.isArray(e.sets)),
+    );
+    if (!logsOk) return null;
+
+    const tests = Array.isArray(parsed.tests) ? parsed.tests : [];
+    if (!tests.every((t) => t != null && typeof t.date === 'string' && Number.isFinite(t.vo2max))) return null;
+
+    // A profile with a non-numeric weight or strength index does not throw — it
+    // quietly produces NaN starting loads on every machine, which is worse.
+    const p = parsed.profile;
+    if (p != null) {
+      const numbersOk = [p.age, p.weightKg, p.restingHr, p.walkMinutesEachWay, p.strengthIndex].every((n) =>
+        Number.isFinite(n),
+      );
+      if (typeof p.name !== 'string' || !numbersOk) return null;
+    }
+
+    return {
       version: VERSION,
-      profile: parsed.profile ?? null,
+      profile: p ?? null,
       logs: parsed.logs,
-      tests: Array.isArray(parsed.tests) ? parsed.tests : [],
+      tests,
     };
-    save(next);
-    return next;
   } catch {
     return null;
   }
+}
+
+export function importJson(text: string): TrainState | null {
+  const next = parseImport(text);
+  if (!next) return null;
+  save(next);
+  return next;
 }
 
 export function clearAll(): TrainState {

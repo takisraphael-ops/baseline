@@ -139,6 +139,25 @@ const fragment = `${head}
 ${body}
 `;
 
+// Tab and home-screen icon, drawn here rather than linked. The workflow deploys
+// exactly one file, so anything under public/ simply is not there — a `<link>`
+// to /icons/icon-192.png would 404 and the app would fall back to a blank page
+// glyph. An inline SVG data URI needs no second request and scales to any size.
+// Three ascending bars: the whole app in one mark.
+//
+// Note this covers `rel="icon"`, which every browser honours. It deliberately
+// does not add `apple-touch-icon` — iOS wants a real PNG at a real URL and its
+// support for data URIs there is unreliable, so a wrong one would look broken
+// rather than absent. Add-to-home-screen on iOS still needs a hosted PNG.
+const ACCENT = '#0a7683';
+const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<rect width="64" height="64" rx="14" fill="${ACCENT}"/>
+<rect x="14" y="36" width="9" height="16" rx="2.5" fill="#fff"/>
+<rect x="27.5" y="26" width="9" height="26" rx="2.5" fill="#fff"/>
+<rect x="41" y="14" width="9" height="38" rx="2.5" fill="#fff"/>
+</svg>`;
+const iconHref = `data:image/svg+xml,${encodeURIComponent(iconSvg.replace(/\n/g, ''))}`;
+
 // Standalone build: a complete document, because nothing else is going to
 // supply one. The viewport meta is the load-bearing line — without it the app
 // is laid out at 980px and scaled down on every phone.
@@ -148,12 +167,13 @@ const document = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#0F766E">
+<meta name="theme-color" content="#0a7683">
 <meta name="description" content="A twelve-week strength and cardio plan that runs itself.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Baseline">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="robots" content="noindex">
+<link rel="icon" href="${iconHref}">
 ${head}
 </head>
 <body>

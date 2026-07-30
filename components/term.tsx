@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { BookOpen, X } from 'lucide-react';
@@ -38,16 +38,48 @@ export default function Term({
   // Portals need a DOM to target, so nothing is rendered until after mount.
   const [mounted, setMounted] = useState(false);
   const term = getTerm(id);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;
+    // The sheet is portalled to the end of <body>, so without moving focus into
+    // it, Tab from the trigger walks the page behind the scrim while a dialog
+    // claiming aria-modal is on screen. Focus goes in on open, is kept inside
+    // while it is up, and is handed back to the trigger on close — dropping it
+    // to <body> instead loses a keyboard user's place entirely.
+    const previous = triggerRef.current;
+    sheetRef.current?.focus();
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const sheet = sheetRef.current;
+      if (!sheet) return;
+      const focusable = sheet.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      const first = focusable[0] ?? sheet;
+      const last = focusable[focusable.length - 1] ?? sheet;
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || active === sheet)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      previous?.focus();
+    };
   }, [open]);
 
   // An unknown id must never swallow the words it was wrapping.
@@ -56,6 +88,7 @@ export default function Term({
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         className={bare ? className : `term ${className}`}
@@ -77,7 +110,7 @@ export default function Term({
           aria-label={term.label}
           onClick={() => setOpen(false)}
         >
-          <div className="term-sheet" onClick={(e) => e.stopPropagation()}>
+          <div className="term-sheet" tabIndex={-1} ref={sheetRef} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <h2 className="text-lg font-semibold tracking-tight">{term.label}</h2>
               <button

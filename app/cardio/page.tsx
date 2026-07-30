@@ -169,7 +169,7 @@ export default function CardioPage() {
             {first && first !== latest && (
               <p className="text-sm mt-2">
                 {isMeaningfulChange(first.vo2max, latest.vo2max) ? (
-                  <span style={{ color: vo2Delta(first.vo2max, latest.vo2max) > 0 ? 'var(--success)' : 'var(--warning)' }}>
+                  <span style={{ color: vo2Delta(first.vo2max, latest.vo2max) > 0 ? 'var(--success)' : 'var(--state-warn)' }}>
                     {vo2Delta(first.vo2max, latest.vo2max) > 0 ? '+' : ''}
                     {vo2Delta(first.vo2max, latest.vo2max).toFixed(1)}% since your first test.
                   </span>
@@ -233,9 +233,10 @@ export default function CardioPage() {
         ) : (
           <>
             <p className="text-sm muted mb-3">
-              The <Term id="cooper-test">Cooper test</Term>: cover as much distance as you can in
-              exactly 12 minutes, on a treadmill or bike. This one needs a genuinely maximal effort —
-              save it for week 6 or later.
+              The <Term id="cooper-test">Cooper test</Term>: run as far as you can in exactly 12
+              minutes, on a treadmill or a track. It has to be running — the formula converts
+              distance covered on foot, so a bike ride would score you far higher than you are.
+              This one needs a genuinely maximal effort, so save it for week 6 or later.
             </p>
             <label htmlFor="m" className="text-sm font-medium block mb-1">Distance (metres)</label>
             <input id="m" type="number" inputMode="numeric" className="input num" value={metres} onChange={(e) => setMetres(e.target.value)} placeholder="2000" />

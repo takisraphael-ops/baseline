@@ -5,6 +5,7 @@
 // Deliberately schematic rather than anatomical — at phone size a diagram that
 // reads instantly beats one that is precisely correct and illegible.
 
+import { MUSCLE_LABELS } from '@/lib/train/exercises';
 import type { Muscle } from '@/lib/train/types';
 
 const BODY = 'var(--border)';
@@ -15,9 +16,15 @@ interface Props {
   className?: string;
   /** Front/Back captions are illegible below about 120px, so they are opt-in. */
   labels?: boolean;
+  /**
+   * Hide from assistive tech. Set this wherever the map sits inside a link or
+   * button that already names the exercise — otherwise the muscle list is read
+   * out as part of that control's name, ahead of the name itself.
+   */
+  decorative?: boolean;
 }
 
-export default function MuscleMap({ primary, secondary = [], className, labels = false }: Props) {
+export default function MuscleMap({ primary, secondary = [], className, labels = false, decorative = false }: Props) {
   const fill = (m: Muscle) =>
     primary.includes(m) ? 'var(--accent)' : secondary.includes(m) ? 'var(--accent-soft)' : BODY;
 
@@ -25,8 +32,13 @@ export default function MuscleMap({ primary, secondary = [], className, labels =
     <svg
       viewBox={`0 0 250 ${labels ? 230 : 220}`}
       className={className}
-      role="img"
-      aria-label={`Muscles worked: ${primary.join(', ')}`}
+      // The ids are slugs: unlabelled, a screen reader says "front-delts".
+      // MUSCLE_LABELS already holds the prose the rest of the UI shows.
+      role={decorative ? undefined : 'img'}
+      aria-hidden={decorative || undefined}
+      aria-label={
+        decorative ? undefined : `Muscles worked: ${primary.map((m) => MUSCLE_LABELS[m] ?? m).join(', ')}`
+      }
     >
       {/* ------------------------------------------------------------ front */}
       <g>

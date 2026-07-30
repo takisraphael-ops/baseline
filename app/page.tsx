@@ -107,8 +107,14 @@ export default function Today() {
             <p className="font-semibold">Your walk is training</p>
             <p className="muted mt-0.5">
               At {state.profile.walkMinutesEachWay} minutes each way, four days a week, that is{' '}
-              <strong>{walkMin} minutes</strong> of aerobic work — already past the 150 minutes a week
-              guideline, before you touch a cardio machine.
+              <strong>{walkMin} minutes</strong> of aerobic work
+              {walkMin >= 150 ? (
+                // Only true when it actually is. A 15-minute walk each way is
+                // well inside the range the programme expects and comes to 120.
+                <> — already past the 150 minutes a week guideline, before you touch a cardio machine.</>
+              ) : (
+                <> a week, before you touch a cardio machine. The guideline is 150.</>
+              )}
             </p>
             <Link href="/learn/why-the-walk-counts" className="underline muted inline-block mt-1">
               Why it counts

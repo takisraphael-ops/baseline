@@ -221,9 +221,25 @@ export function rampSets(workingKg: number, incrementKg: number): RampSet[] {
   if (workingKg <= inc * 4) {
     return [{ kg: round(workingKg * 0.5), reps: 8, note: 'One easy set to feel the movement.' }];
   }
-  return [
+  // Each step is rounded to the equipment's own increment, and at low working
+  // weights two of them can round to the same plate — a 25 kg leg press asked
+  // for 50/70/85% gives 15, 20, 20, which reads as a misprint on the warm-up
+  // screen. Keep only steps that actually climb, and that stay short of the
+  // working weight; rounding up instead would let the last one land exactly on
+  // it, which is not a warm-up.
+  const candidates = [
     { kg: round(workingKg * 0.5), reps: 8, note: 'Easy. Just moving.' },
     { kg: round(workingKg * 0.7), reps: 5, note: 'Starting to feel like something.' },
     { kg: round(workingKg * 0.85), reps: 3, note: 'Almost your working weight. Then rest properly and begin.' },
   ];
+  const ramp: typeof candidates = [];
+  for (const step of candidates) {
+    if (step.kg >= workingKg) continue;
+    if (ramp.length > 0 && step.kg <= ramp[ramp.length - 1].kg) continue;
+    ramp.push(step);
+  }
+  // Whichever step ends up last carries the instruction to start the real work.
+  const last = ramp[ramp.length - 1];
+  if (last) last.note = 'Almost your working weight. Then rest properly and begin.';
+  return ramp;
 }

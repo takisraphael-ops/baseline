@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { getExercise } from '../lib/train/exercises';
 import { SESSIONS, SESSION_ORDER, blockForWeek, intervalsForWeek, isDeloadWeek, scaleTarget } from '../lib/train/programme';
-import { INCREMENT_CEILING, effortOf, nextTarget, progressed, stallCount, topKg, totalReps } from '../lib/train/progression';
+import { INCREMENT_CEILING, TEMPO_SEC, effortOf, nextTarget, progressed, stallCount, topKg, totalReps } from '../lib/train/progression';
 import { classifyHr, karvonen, maxHrTanaka, zones } from '../lib/train/zones';
 import { classifyVo2, cooperVo2, isMeaningfulChange, rockportVo2 } from '../lib/train/vo2';
 import { plannedWeeklyVolume, weeklyWalkMinutes } from '../lib/train/volume';
@@ -15,10 +15,11 @@ import { MAX_INDEX, QUESTIONS, cautions, startingLoad, strengthFactor, strengthI
 import { EXERCISES, demoUrl, hasCuratedVideo } from '../lib/train/exercises';
 import { drillDemoUrl, prepFor, rampSets } from '../lib/train/mobility';
 import { alternativesFor } from '../lib/train/swaps';
+import { historyFor } from '../lib/train/store';
 import { TERMS, getTerm, termIdForMatch } from '../lib/train/glossary';
 import { ARTICLES, getArticle } from '../lib/train/learn';
 import type { QuizAnswers } from '../lib/train/quiz';
-import type { LoggedExercise, LoggedSet } from '../lib/train/types';
+import type { LoggedExercise, LoggedSet, SessionLog } from '../lib/train/types';
 
 let failures = 0;
 function expect(label: string, actual: unknown, expected: unknown) {
@@ -157,12 +158,32 @@ const addSet = nextTarget(lat, latTarget, [log('cable-lateral-raise', sets([[2.5
 expect('Doubling extends to an extra set', addSet.lever, 'add-set');
 expect('Set count goes up', addSet.reps.length, 3);
 
-// Out of levers at the very bottom of the stack: +2.5 kg on 2.5 kg doubles the
-// weight, which no amount of earned reps justifies. This one holds, and says
-// where smaller steps come from instead of parking her silently.
-const stuck = nextTarget(lat, latTarget, [log('cable-lateral-raise', sets([[2.5, 17, 2], [2.5, 17, 2], [2.5, 17, 2]]))]);
-expect('Doubling holds and advises', stuck.lever, 'micro-load');
+// Sets are spent too. +2.5 kg on 2.5 kg doubles the weight, which no amount of
+// earned reps justifies — so before sending her out to buy micro-plates the
+// engine spends the one lever that needs no equipment at all, and slows the
+// lowering. SPEC section 5 lists this third of four for exactly this case.
+const tempo = nextTarget(lat, latTarget, [log('cable-lateral-raise', sets([[2.5, 17, 2], [2.5, 17, 2], [2.5, 17, 2]]))]);
+expect('Doubling slows the eccentric before micro-loading', tempo.lever, 'tempo');
+expect('Tempo prescribes 3 seconds', tempo.eccentricSec, TEMPO_SEC);
+expect('Tempo does not move the load', tempo.kg, 2.5);
+expect('Tempo does not add reps', tempo.reps.join(','), '17,17,17');
+
+// Tempo already tried and logged, and the plate is still a doubling: now there
+// is genuinely nothing left, so it says where smaller steps come from rather
+// than parking her silently. This is the step that was unreachable while
+// `eccentricSec` was never recorded.
+const slowed: LoggedSet[] = sets([[2.5, 17, 2], [2.5, 17, 2], [2.5, 17, 2]]).map((s) => ({ ...s, eccentricSec: TEMPO_SEC }));
+const stuck = nextTarget(lat, latTarget, [log('cable-lateral-raise', slowed)]);
+expect('Doubling holds and advises once tempo is spent', stuck.lever, 'micro-load');
 expect('Doubling does not move the load', stuck.kg, 2.5);
+
+// Free weights skip the tempo lever — a 3-second eccentric there is a coaching
+// cue, not something to prescribe blind — so a dumbbell lift goes straight to
+// the micro-load advice.
+const db = getExercise('db-lateral-raise');
+const dbTarget = { sets: 3, repMin: 12, repMax: 15, rir: 2, restSec: 45 };
+const dbStuck = nextTarget(db, dbTarget, [log('db-lateral-raise', sets([[2, 17, 2], [2, 17, 2], [2, 17, 2], [2, 17, 2]]))]);
+expect('Free weights do not get the tempo lever', dbStuck.lever, 'micro-load');
 
 // One step up the stack the same lift can progress — the hold is about the
 // ratio, not the exercise.
@@ -220,6 +241,25 @@ const swapped = nextTarget(legPress, legPressTarget, [
   log('leg-press', flat), log('leg-press', flat), log('leg-press', flat), log('leg-press', flat),
 ]);
 expect('Three stalls suggests a swap', swapped.lever, 'swap-variant');
+
+// A deload week asks for fewer sets than the session it follows. The rep array
+// is seeded from that previous session, so without an explicit truncation it
+// keeps the old count and prescribes three sets under a banner promising about
+// 40% fewer. The same path covers a 2-set prime whose history was logged as a
+// 3-set accessory — the block's target is what she is being asked to do.
+const deloadTarget = { ...legPressTarget, sets: 2 };
+const cutBack = nextTarget(legPress, deloadTarget, [log('leg-press', sets([[40, 10, 2], [40, 10, 2], [40, 10, 2]]))]);
+expect('Fewer sets asked for means fewer sets prescribed', cutBack.reps.length, 2);
+
+// historyFor promises most-recent-first. Sort is stable and the dates match, so
+// without the completedAt tiebreak these come back in insertion order and the
+// engine reads the wrong session as "last time".
+const sameDay: SessionLog[] = [
+  { date: '2026-07-20', sessionId: 'lower-a', week: 1, exercises: [log('leg-press', sets([[40, 10, 2]]))], cardioMinutes: 0, cardioKind: 'none', completedAt: '2026-07-20T08:00:00.000Z' },
+  { date: '2026-07-20', sessionId: 'lower-a', week: 1, exercises: [log('leg-press', sets([[50, 10, 2]]))], cardioMinutes: 0, cardioKind: 'none', completedAt: '2026-07-20T18:00:00.000Z' },
+];
+const ordered = historyFor({ version: 1, profile: null, logs: sameDay, tests: [] }, 'leg-press');
+expect('Same-day sessions come back newest first', topKg(ordered[0]), 50);
 
 // -------------------------------------------------------------- programme
 console.log('\n--- Programme shape ---');

@@ -44,7 +44,11 @@ export default function LibraryPage() {
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 muted pointer-events-none" aria-hidden />
         <input
-          className="input pl-9 pr-9"
+          // `.input` sets `padding` as a shorthand and is declared after
+          // @tailwind utilities, so at equal specificity it wins on source order
+          // and plain pl-9/pr-9 do nothing — the icon and the clear button end up
+          // sitting on top of the typed text. The important flag settles it.
+          className="input !pl-9 !pr-9"
           placeholder="Search by name or muscle…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -88,7 +92,7 @@ export default function LibraryPage() {
           {results.map((e) => (
             <li key={e.id}>
               <Link href={`/library/${e.id}`} className="card flex items-center gap-3" style={{ padding: '12px 14px' }}>
-                <MuscleMap primary={e.primary} secondary={e.secondary} className="w-11 shrink-0" />
+                <MuscleMap primary={e.primary} secondary={e.secondary} className="w-11 shrink-0" decorative />
                 <span className="min-w-0 flex-1">
                   <span className="font-semibold block leading-tight">{e.name}</span>
                   <span className="muted text-sm">
