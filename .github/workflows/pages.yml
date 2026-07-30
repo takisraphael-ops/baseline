@@ -1,0 +1,90 @@
+# Publishes the single-file build of Baseline to GitHub Pages.
+#
+# What gets deployed is demo/dist/index.html, produced by
+# `node demo/build.mjs --client --standalone`:
+#
+#   --client      no seeded sample history and no preview banner, so the page
+#                 opens on the athlete's quiz rather than someone else's data
+#   --standalone  a complete HTML document. The artifact host supplies its own
+#                 doctype and viewport meta; Pages supplies nothing, and a page
+#                 without a viewport meta is laid out by phones at 980px and
+#                 zoomed out. This flag is the difference between working and
+#                 unreadable on the device the app is designed for.
+#
+# `npm run build` has to run first even though Next itself is not deployed:
+# demo/build.mjs reads the Inter subset that next/font emits into .next/static
+# and inlines it as a data URI. --require-font makes a missing subset fail the
+# job rather than quietly shipping system fonts.
+
+name: Deploy to Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# One in-flight deployment at a time; a newer push supersedes an older one
+# rather than racing it. Never cancel a run that is mid-deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Cheap, and it fails the deploy before anything is published rather
+      # than after. The fixtures cover the programme maths, every demo link,
+      # and that the standalone target still carries its viewport meta.
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run fixture
+
+      # Emits .next/static/media, which the font inlining step reads.
+      - run: npm run build
+
+      - run: node demo/build.mjs --client --standalone --require-font
+
+      # Ship exactly one file. Pages serves index.html at the site root, and
+      # nothing else in demo/dist belongs on a public host.
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp demo/dist/index.html _site/index.html
+          # Pages runs a Jekyll pass by default, which ignores files and
+          # directories beginning with an underscore. Nothing here starts with
+          # one today, but this costs nothing and removes a whole class of
+          # "it works locally" surprise.
+          touch _site/.nojekyll
+          ls -la _site
+          test -s _site/index.html
+          grep -q 'name="viewport"' _site/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,912 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================ Design tokens
+   "Graphite & Ice", carried over from FitForge so the two apps read as one
+   family: a three-tier surface stack (sunken / base / elevated), a deep teal
+   accent that survives use as text on near-white, and a separate state scale
+   so "how you are doing" never borrows the colour that means "you can tap
+   this". */
+:root {
+  --bg: #f1f4f8;
+  --bg-elev: #ffffff;
+  --bg-sunken: #e5eaf0;
+  --border: #dbe1ea;
+  --border-strong: #c2ccd8;
+  --text: #0e1319;
+  --text-muted: #566070;
+  --text-faint: #626b79;
+
+  --accent: #0a7683;
+  --accent-hover: #08616c;
+  --accent-soft: #e0f4f6;
+  /* Text drawn ON an accent fill — flips with the mode. */
+  --on-accent: #ffffff;
+  --on-ok: #05231a;
+
+  --success: #1f9d61;
+  --success-soft: #d5f0e0;
+  --warn: #c78a12;
+  --danger: #c02a2a;
+
+  /* State scale: one cool-to-warm run for anything reporting progress. */
+  --state-ok: #25795a;
+  --state-warn: #8c5a0c;
+  --state-over: #b03a26;
+
+  /* The priming sets are deliberately not the accent — they are a different
+     kind of thing from working sets, and the colour says so. */
+  --prime: #7a4bb8;
+  --prime-soft: #ece2fa;
+
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 8px 28px rgba(16, 24, 40, 0.10);
+  --glow: 0 2px 14px color-mix(in srgb, var(--accent) 16%, transparent);
+  --card-sheen: linear-gradient(165deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 55%);
+  --dock-bg: rgba(255, 255, 255, 0.86);
+
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 22px;
+}
+
+.dark,
+:root[data-theme='dark'] {
+  --bg: #0c0e12;
+  --bg-elev: #111419;
+  --bg-sunken: #06080c;
+  --border: #1e2530;
+  --border-strong: #2c3644;
+  --text: #eef1f5;
+  --text-muted: #7d8798;
+  --text-faint: #798497;
+
+  --accent: #57c9d6;
+  --accent-hover: #74d6e1;
+  --accent-soft: #10262a;
+  --on-accent: #05242a;
+  --on-ok: #04231a;
+
+  --success: #3ecf8e;
+  --success-soft: #0f2e22;
+  --warn: #e0a83f;
+  --danger: #ef5f5f;
+
+  --state-ok: #4ec99a;
+  --state-warn: #e0a445;
+  --state-over: #ef6a4f;
+
+  --prime: #b79cf0;
+  --prime-soft: #1d1630;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 12px 34px rgba(0, 0, 0, 0.5);
+  --glow: 0 0 18px color-mix(in srgb, var(--accent) 12%, transparent);
+  --card-sheen: linear-gradient(165deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01) 55%);
+  --dock-bg: rgba(14, 17, 22, 0.88);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not([data-theme='light']) {
+    --bg: #0c0e12;
+    --bg-elev: #111419;
+    --bg-sunken: #06080c;
+    --border: #1e2530;
+    --border-strong: #2c3644;
+    --text: #eef1f5;
+    --text-muted: #7d8798;
+    --text-faint: #798497;
+    --accent: #57c9d6;
+    --accent-hover: #74d6e1;
+    --accent-soft: #10262a;
+    --on-accent: #05242a;
+    --on-ok: #04231a;
+    --success: #3ecf8e;
+    --success-soft: #0f2e22;
+    --warn: #e0a83f;
+    --danger: #ef5f5f;
+    --state-ok: #4ec99a;
+    --state-warn: #e0a445;
+    --state-over: #ef6a4f;
+    --prime: #b79cf0;
+    --prime-soft: #1d1630;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 12px 34px rgba(0, 0, 0, 0.5);
+    --glow: 0 0 18px color-mix(in srgb, var(--accent) 12%, transparent);
+    --card-sheen: linear-gradient(165deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01) 55%);
+    --dock-bg: rgba(14, 17, 22, 0.88);
+    color-scheme: dark;
+  }
+}
+
+/* An explicit choice must beat the OS preference in BOTH directions, so the
+   light override comes last. */
+:root[data-theme='light'] {
+  --bg: #f1f4f8;
+  --bg-elev: #ffffff;
+  --bg-sunken: #e5eaf0;
+  --border: #dbe1ea;
+  --border-strong: #c2ccd8;
+  --text: #0e1319;
+  --text-muted: #566070;
+  --text-faint: #626b79;
+  --accent: #0a7683;
+  --accent-hover: #08616c;
+  --accent-soft: #e0f4f6;
+  --on-accent: #ffffff;
+  --on-ok: #05231a;
+  --success: #1f9d61;
+  --success-soft: #d5f0e0;
+  --warn: #c78a12;
+  --danger: #c02a2a;
+  --state-ok: #25795a;
+  --state-warn: #8c5a0c;
+  --state-over: #b03a26;
+  --prime: #7a4bb8;
+  --prime-soft: #ece2fa;
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 8px 28px rgba(16, 24, 40, 0.10);
+  --card-sheen: linear-gradient(165deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 55%);
+  --dock-bg: rgba(255, 255, 255, 0.86);
+  color-scheme: light;
+}
+
+/* ==================================================================== base */
+* { box-sizing: border-box; }
+
+html, body { background: var(--bg); color: var(--text); }
+body {
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+* { -webkit-tap-highlight-color: transparent; }
+
+h1, h2, h3 { font-weight: 600; letter-spacing: -0.01em; }
+h1 { font-weight: 650; font-size: 24px; letter-spacing: -0.02em; }
+h2 { font-size: 20px; }
+h3 { font-size: 16px; }
+
+:focus:not(:focus-visible) { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Aligned columns everywhere digits appear. */
+.num, .stat-value, .tabular { font-variant-numeric: tabular-nums lining-nums; }
+
+/* ================================================================ surfaces */
+.card {
+  background: var(--card-sheen), var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+
+.sunken {
+  background: var(--bg-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.stat { background: var(--bg-sunken); border-radius: var(--radius-sm); padding: 14px; }
+.stat-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-muted); margin-bottom: 4px;
+}
+.stat-value { font-size: 22px; font-weight: 600; color: var(--text); }
+.stat-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+
+.label {
+  font-size: 12px; font-weight: 500; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em; display: block;
+}
+
+/* ================================================================= inputs */
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  min-height: 44px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.input-num {
+  text-align: center;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 600;
+  -moz-appearance: textfield;
+}
+.input-num::-webkit-outer-spin-button,
+.input-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* The native dropdown arrow eats the whole field at this width and clips the
+   digit. The control is still a real select — it just shows the value instead. */
+.select-bare {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
+  text-align: center;
+  text-align-last: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Stepper: the value stays visible and readable, and both controls are
+   thumb-sized. Typing on a phone mid-set is the thing to design out. */
+/* Four columns: set number, weight, reps, done. Sized so the number field keeps
+   at least ~48px on a 375px screen — at five columns it collapsed to 21px and
+   clipped the value. */
+.set-grid {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) minmax(0, 1fr) 46px;
+  gap: 6px;
+}
+
+/* Very narrow phones (SE 1st gen and similar): claw back width from the
+   chrome so a three-digit weight still fits in the field. */
+@media (max-width: 360px) {
+  .set-grid { grid-template-columns: 12px minmax(0, 1fr) minmax(0, 1fr) 42px; gap: 4px; }
+  .stepper-btn { width: 26px; }
+}
+
+.stepper { display: flex; align-items: stretch; gap: 0; }
+.stepper-btn {
+  width: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: background 120ms ease, color 120ms ease;
+}
+.stepper-btn:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); border-right: none; }
+.stepper-btn:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; border-left: none; }
+.stepper-btn:hover { background: var(--border); color: var(--text); }
+.stepper-btn:active { transform: scale(0.94); }
+/* Must grow: without flex-grow the field collapses to a few pixels between the
+   two buttons and the value — the whole point of the control — is invisible. */
+.stepper .input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  border-radius: 0;
+  padding-left: 2px;
+  padding-right: 2px;
+  font-size: 15px;
+}
+
+/* ================================================================ buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+  color: var(--text);
+  border: 1px solid var(--border);
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
+}
+.btn:hover { border-color: var(--border-strong); }
+.btn:active { transform: scale(0.985); }
+.btn:disabled { opacity: 0.45; pointer-events: none; }
+.btn-primary {
+  background: var(--accent); color: var(--on-accent); border-color: var(--accent);
+  box-shadow: var(--glow); font-weight: 600;
+}
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-ghost { background: transparent; color: var(--text-muted); border-color: var(--border); }
+.btn-ghost:hover { background: var(--bg-sunken); color: var(--text); }
+.btn-quiet { background: transparent; border-color: transparent; color: var(--text-muted); }
+.btn-quiet:hover { background: var(--bg-sunken); color: var(--text); }
+.btn-danger { background: transparent; color: var(--danger); border-color: var(--border); }
+.btn-danger:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); border-color: var(--danger); }
+.btn-sm { min-height: 44px; padding: 8px 12px; font-size: 13.5px; }
+
+/* The set-complete control. Wide and labelled, not a bare icon — it is the
+   most-repeated tap in the app. */
+.set-done {
+  min-height: 46px;
+  width: 100%;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  color: var(--text);
+  border: 1.5px solid var(--border-strong);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 13px; font-weight: 700; line-height: 1; white-space: nowrap;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.set-done:hover { border-color: var(--success); color: var(--success); }
+.set-done:active { transform: scale(0.97); }
+.set-done.checked {
+  background: var(--success); color: var(--on-ok); border-color: var(--success);
+}
+
+/* ================================================================== chips */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px; font-weight: 600;
+  letter-spacing: 0.01em;
+  min-height: 22px;
+  background: var(--bg-sunken);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.chip-accent { background: var(--accent-soft); color: var(--accent); }
+.chip-prime { background: var(--prime-soft); color: var(--prime); }
+.chip-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+.chip-ok { background: var(--success-soft); color: var(--state-ok); }
+
+/* Previous-session set chips, so last time's numbers are visible while
+   entering this time's. */
+.prev-chip {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-elev));
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+}
+
+/* ============================================================== structure */
+.divider { border-top: 1px solid var(--border); }
+.muted { color: var(--text-muted); }
+.faint { color: var(--text-faint); }
+
+.tabs {
+  display: flex; gap: 2px;
+  background: var(--bg-sunken);
+  padding: 4px;
+  border-radius: var(--radius);
+}
+.tab {
+  flex: 1; min-width: max-content;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13.5px; font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: background 150ms ease, color 150ms ease;
+}
+.tab.active { background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow-sm); }
+
+/* Numbered setup steps, and the mistakes list. The number is information —
+   these really are ordered — so it earns the badge. */
+.steps { counter-reset: step; list-style: none; padding: 0; }
+.steps li {
+  position: relative;
+  padding: 8px 0 8px 34px;
+  font-size: 14px;
+  line-height: 1.55;
+  border-bottom: 1px solid var(--border);
+}
+.steps li:last-child { border-bottom: none; }
+.steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute; left: 0; top: 9px;
+  width: 22px; height: 22px;
+  background: var(--accent); color: var(--on-accent);
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+}
+.warns { list-style: none; padding: 0; }
+.warns li { position: relative; padding: 8px 0 8px 30px; font-size: 14px; line-height: 1.55; }
+.warns li::before {
+  content: "!";
+  position: absolute; left: 2px; top: 9px;
+  width: 20px; height: 20px;
+  background: color-mix(in srgb, var(--danger) 15%, transparent);
+  color: var(--danger);
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+
+.meter { height: 8px; border-radius: 999px; background: var(--bg-sunken); overflow: hidden; }
+.meter > span { display: block; height: 100%; border-radius: 999px; transition: width 300ms ease; }
+
+.prose-tight p { margin-bottom: 0.85rem; }
+.prose-tight p:last-child { margin-bottom: 0; }
+
+/* ============================================================== ignition
+   The start control, borrowed from a car's engine-start button: a machined
+   bezel, a raised face, and a standby ring that breathes until it is pressed.
+   Deliberately not red — in this palette red means destructive, and it is
+   already spoken for by "Delete all data". The form does the talking. */
+.ignition {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 1px;
+  flex: none;
+  width: 106px;
+  height: 106px;
+  border-radius: 999px;
+  color: var(--accent);
+  background:
+    radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--accent) 20%, var(--bg-elev)), var(--bg-elev) 72%),
+    var(--bg-elev);
+  border: 2px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--accent) 9%, transparent),
+    0 8px 20px rgba(16, 24, 40, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -3px 8px color-mix(in srgb, var(--accent) 10%, transparent);
+  transition: transform 130ms cubic-bezier(0.2, 0, 0.2, 1), box-shadow 180ms ease;
+}
+
+/* The standby ring. Pings outward and fades, like a car waiting for the brake. */
+.ignition::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 999px;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  animation: ignition-standby 2.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes ignition-standby {
+  0%   { transform: scale(1);    opacity: 0.5; }
+  65%  { transform: scale(1.26); opacity: 0; }
+  100% { transform: scale(1.26); opacity: 0; }
+}
+
+/* Pressed: the face sinks and the glow closes in, the way a real one does. */
+.ignition:active {
+  transform: scale(0.94);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 2px 6px rgba(16, 24, 40, 0.2),
+    inset 0 3px 10px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.ignition:hover { border-color: var(--accent); }
+
+.ignition-label {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1;
+}
+
+.ignition-sm { width: 74px; height: 74px; }
+.ignition-sm .ignition-label { font-size: 10.5px; letter-spacing: 0.12em; }
+
+/* A ring that never stops moving is a nuisance, not an invitation. */
+@media (prefers-reduced-motion: reduce) {
+  .ignition::after { animation: none; }
+}
+
+/* ================================================================== learn
+   The Learn section is where the reasoning lives, and a quiet ghost button in
+   the corner meant it read as chrome. It now carries the accent, and a sweep
+   passes across it every few seconds — a periodic glance-catcher rather than
+   constant motion, which would just become noise to scroll past. */
+.learn-cta {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 8px 15px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  animation: learn-breathe 5s ease-in-out infinite;
+  transition: transform 130ms ease, background 160ms ease;
+}
+.learn-cta:hover { background: color-mix(in srgb, var(--accent) 18%, var(--bg-elev)); }
+.learn-cta:active { transform: scale(0.96); }
+
+/* The sweep. Sits above the fill, below the label. */
+.learn-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 34%,
+    color-mix(in srgb, var(--accent) 30%, transparent) 50%,
+    transparent 66%
+  );
+  transform: translateX(-130%);
+  animation: learn-sweep 6.5s ease-in-out infinite;
+  pointer-events: none;
+}
+.learn-cta > * { position: relative; z-index: 1; }
+
+.learn-cta svg {
+  animation: learn-page 6.5s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes learn-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 28%, transparent); }
+  55%      { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+@keyframes learn-sweep {
+  0%, 68%   { transform: translateX(-130%); }
+  84%, 100% { transform: translateX(130%); }
+}
+/* A page turning, once per cycle, in time with the sweep. */
+@keyframes learn-page {
+  0%, 74% { transform: rotateY(0deg); }
+  82%     { transform: rotateY(-38deg); }
+  90%     { transform: rotateY(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learn-cta, .learn-cta::after, .learn-cta svg { animation: none; }
+  .learn-cta::after { display: none; }
+}
+
+@keyframes pop-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.pop-in { animation: pop-in 180ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ============================================================ watch the demo
+   The one thing she needs standing in front of an unfamiliar machine, so it
+   is full-size on the card and quietly keeps drawing the eye. The play mark
+   pulses; a slow sheen crosses the button; neither ever moves the layout. */
+.watch-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  cursor: pointer;
+  animation: watch-breathe 3.2s ease-in-out infinite;
+}
+.watch-cta svg {
+  animation: watch-pulse 3.2s ease-in-out infinite;
+}
+.watch-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    100deg,
+    transparent 32%,
+    color-mix(in srgb, var(--accent) 26%, transparent) 50%,
+    transparent 68%
+  );
+  transform: translateX(-120%);
+  animation: watch-sweep 3.2s ease-in-out infinite;
+}
+.watch-cta:active { transform: scale(0.98); }
+.watch-cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Inside a warm-up drill, where the card is already small. Still a 40px tap
+   target, still animated — just not shouting over the instructions above it. */
+.watch-cta-sm { min-height: 40px; font-size: 13.5px; gap: 6px; }
+
+@keyframes watch-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 30%, transparent); }
+  50%      { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+@keyframes watch-pulse {
+  0%, 62%, 100% { transform: scale(1); }
+  72%           { transform: scale(1.18); }
+  84%           { transform: scale(1); }
+}
+@keyframes watch-sweep {
+  0%, 55%  { transform: translateX(-120%); }
+  92%, 100% { transform: translateX(120%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .watch-cta, .watch-cta svg, .watch-cta::after { animation: none; }
+  .watch-cta::after { display: none; }
+}
+
+/* ============================================================ glossary term
+   Jargon she can tap. Marked with a dashed underline rather than a solid one,
+   so it reads as "there is an explanation here" and never gets confused with a
+   navigation link — tapping it keeps her on the page she is on. */
+.term {
+  display: inline;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  text-align: inherit;
+  cursor: help;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: color-mix(in srgb, var(--accent) 65%, transparent);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  border-radius: 4px;
+  /* A line of text is only ~20px tall, which is a fiddly target with one hand
+     mid-set. Vertical padding on an inline element grows the hit box without
+     affecting line height, so this costs nothing in layout; the horizontal
+     padding is cancelled so words keep their normal spacing. */
+  padding: 5px 2px;
+  margin: 0 -2px;
+  transition: background 140ms ease, text-decoration-color 140ms ease;
+}
+.term:hover, .term:focus-visible {
+  background: var(--accent-soft);
+  text-decoration-color: var(--accent);
+}
+.term:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.term:active { background: var(--accent-soft); }
+
+/* A chip that is also a term keeps every bit of its pill styling — all this
+   adds is the dashed rule that says "there is an explanation behind this". */
+.chip-info {
+  cursor: help;
+  border-bottom: 1px dashed color-mix(in srgb, currentColor 50%, transparent);
+  transition: border-bottom-color 140ms ease;
+}
+.chip-info:hover, .chip-info:focus-visible { border-bottom-color: currentColor; }
+.chip-info:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chip-info:active { transform: scale(0.97); }
+
+/* A chip that is a control rather than a label needs a real tap target. The
+   library filters get used every time she looks something up, and 23px is a
+   miss waiting to happen with one hand. */
+.chip-info, .chip-tap { min-height: 30px; padding-top: 6px; padding-bottom: 6px; }
+.chip-tap { padding-left: 13px; padding-right: 13px; }
+.chip-tap:active { transform: scale(0.97); }
+
+/* Anchored to the bottom because that is where her thumb is, and because a
+   centred modal on a small screen covers the sentence she was reading. */
+.term-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  background: color-mix(in srgb, #000 46%, transparent);
+  backdrop-filter: blur(2px);
+  animation: term-fade 160ms ease;
+}
+.term-sheet {
+  width: 100%;
+  max-width: 34rem;
+  color: var(--text);
+  text-align: left;
+  font-weight: 400;
+  font-style: normal;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.32);
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  margin-bottom: 76px; /* clears the bottom nav */
+  animation: term-rise 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes term-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes term-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ================================================================== splash
+   The launch animation. Two seconds, then it opens into the app.
+
+   The mark is the same object as the ignition button she taps to start a
+   session — a ring with a soft core — so the first thing she sees and the
+   thing she presses are visibly the same family. Inside it, three bars rise
+   off a rule: the rule is the baseline, the bars are what gets built on it.
+
+   Drawn entirely in CSS on empty elements. That means no SVG in the markup,
+   no images, no JS timer, and nothing that can fail to load — the whole thing
+   is one <div> and a stylesheet, so it paints on the first frame and clears
+   itself whether or not the app behind it has finished starting.
+
+   Pointer-events stay off throughout. A splash that swallows taps is a splash
+   that reads as a frozen app. */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  pointer-events: none;
+  animation: splash-exit 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.splash-inner {
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+  animation: splash-open 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ---- the ring ---- */
+.splash-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 132px;
+  height: 132px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 34%, color-mix(in srgb, var(--accent) 22%, var(--bg-elev)), var(--bg-elev) 72%),
+    var(--bg-elev);
+  border: 2px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--accent) 8%, transparent),
+    0 10px 30px rgba(16, 24, 40, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -4px 12px color-mix(in srgb, var(--accent) 10%, transparent);
+  animation: splash-ring-in 700ms cubic-bezier(0.16, 1.3, 0.3, 1) both;
+}
+/* The single ignition pulse, once the bars have finished building. */
+.splash-ring::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 999px;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  animation: splash-pulse 900ms cubic-bezier(0, 0, 0.2, 1) 1.15s both;
+}
+
+/* ---- bars rising off the baseline ---- */
+.splash-bars {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+  height: 46px;
+  /* The baseline rule hangs below the bars, so centring the box leaves the
+     mark sitting low in the ring. This centres it optically instead. */
+  margin-bottom: 16px;
+}
+.splash-bars i {
+  display: block;
+  width: 11px;
+  border-radius: 3px 3px 1px 1px;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, transparent));
+  transform-origin: 50% 100%;
+  animation: splash-bar 520ms cubic-bezier(0.16, 1.25, 0.3, 1) both;
+}
+.splash-bars i:nth-child(1) { height: 17px; animation-delay: 0.46s; }
+.splash-bars i:nth-child(2) { height: 30px; animation-delay: 0.58s; }
+.splash-bars i:nth-child(3) { height: 43px; animation-delay: 0.70s; }
+/* The baseline itself, drawn outward from the centre. */
+.splash-bars::after {
+  content: '';
+  position: absolute;
+  left: -7px;
+  right: -7px;
+  bottom: -8px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  animation: splash-rule 420ms cubic-bezier(0.2, 0, 0.2, 1) 0.26s both;
+}
+
+/* ---- wordmark ---- */
+.splash-word {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em; /* balances the trailing letter-space */
+  text-transform: uppercase;
+  color: var(--text);
+  animation: splash-word 620ms cubic-bezier(0.2, 0, 0.2, 1) 0.62s both;
+}
+
+/* ---- loading bar ---- */
+.splash-track {
+  position: relative;
+  width: 172px;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  animation: splash-word 400ms ease 0.3s both;
+}
+.splash-track span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, transparent), var(--accent));
+  /* Fast off the line, then it eases into place — a bar that crawls at a
+     constant rate reads as slower than one that does the same work unevenly. */
+  animation: splash-fill 1.55s cubic-bezier(0.25, 0.9, 0.3, 1) 0.24s both;
+}
+/* A sheen crossing the bar, so it reads as working rather than painted on. */
+.splash-track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: splash-sheen 1.15s ease-in-out 0.5s 2 both;
+}
+
+@keyframes splash-ring-in {
+  from { opacity: 0; transform: scale(0.72); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes splash-bar {
+  from { transform: scaleY(0); opacity: 0.2; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+@keyframes splash-rule {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes splash-word {
+  from { opacity: 0; transform: translateY(7px); letter-spacing: 0.46em; }
+  to   { opacity: 1; transform: none; letter-spacing: 0.3em; }
+}
+@keyframes splash-fill {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+@keyframes splash-sheen {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+@keyframes splash-pulse {
+  0%   { transform: scale(1);    opacity: 0.55; }
+  70%  { transform: scale(1.3);  opacity: 0; }
+  100% { transform: scale(1.3);  opacity: 0; }
+}
+/* Holds still, then opens outward as it hands over to the app. */
+@keyframes splash-open {
+  0%, 88% { transform: scale(1); }
+  100%    { transform: scale(1.07); }
+}
+@keyframes splash-exit {
+  0%, 88% { opacity: 1; visibility: visible; }
+  100%    { opacity: 0; visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  /* The rule above collapses every splash animation to nothing, which is the
+     right outcome — no launch animation at all, straight into the app. */
+  .splash { display: none; }
+}
