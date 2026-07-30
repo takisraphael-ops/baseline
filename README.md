@@ -22,7 +22,7 @@ how to set a machine up or how hard a set is meant to feel.
   that train the same muscle, ranked by shared muscle first and equipment second
   (another machine of the same kind is often occupied too). Swaps last one
   session; next week the original is back.
-- **Exercise library** — 42 exercises, each with numbered setup steps that name
+- **Exercise library** — 41 exercises, each with numbered setup steps that name
   the specific adjustment, what a good rep feels like, the usual mistakes, an
   in-house muscle diagram, and a machine-to-free-weight progression ladder.
 - **Warm-up and cool-down** — four mobility drills chosen per session (ankle
@@ -32,8 +32,8 @@ how to set a machine up or how hard a set is meant to feel.
 - **Cardio** — heart-rate zones from Tanaka and Karvonen, a Zone 2 prescription,
   an interval ramp building to the Norwegian 4×4, and VO2 max estimation from
   the Rockport walk test or the Cooper 12-minute test.
-- **Learn** — twelve plain-English articles. Techniques are explained
-  immediately and unlocked on a schedule.
+- **Learn** — thirteen plain-English articles plus a glossary. Techniques are
+  explained immediately and unlocked on a schedule.
 
 ## Stack
 
@@ -67,14 +67,25 @@ instead of rounding flat.
 
 ```
 npm run build                  # needed once, for the self-hosted Inter subset
-node demo/build.mjs            # -> demo/dist/baseline.html         (preview)
-node demo/build.mjs --client   # -> demo/dist/baseline-client.html  (hers)
+node demo/build.mjs            # -> demo/dist/baseline.html         (preview, fragment)
+node demo/build.mjs --client   # -> demo/dist/baseline-client.html  (client, fragment)
+
+# What GitHub Pages actually deploys:
+node demo/build.mjs --client --standalone --require-font   # -> demo/dist/index.html
 ```
 
-Bundles the whole app into one self-contained HTML file — JS, CSS and typeface
-all inlined, no external requests — for hosting anywhere that serves a static
-page. `next/link` and `next/navigation` are aliased to shims in `demo/shims`, so
-no page component is forked: both builds run the same code as the app.
+Bundles the whole app into one file — JS, CSS and typeface all inlined, no
+external requests. `next/link` and `next/navigation` are aliased to shims in
+`demo/shims`, so no page component is forked: every build runs the same code as
+the app.
+
+`--standalone` is what makes the output hostable anywhere. Without it the build
+emits a `<head>`+`<body>` *fragment*, which is correct only for the Claude
+artifact host, because that host supplies its own document wrapper. A fragment
+served from a static host has no viewport meta, so every phone lays it out at
+980px and zooms out. `--require-font` fails the build rather than silently
+shipping system fonts when the Inter subset is missing. `.github/workflows/pages.yml`
+uses all three flags; `scripts/fixture-run.ts` asserts the standalone contract.
 
 Two outputs from one entry, switched by a `__PREVIEW__` define:
 
@@ -93,10 +104,12 @@ Two outputs from one entry, switched by a `__PREVIEW__` define:
   export/import in Settings. Because every read and write goes through one
   module, a sync backend can be added later without touching a component.
 - **Videos are linked, never embedded.** The app sets `X-Frame-Options: DENY`
-  and grants no device permissions. Links open in a new tab. Each exercise
-  carries a curated tutorial where one was found, plus a YouTube search that
-  cannot 404 — the curated links could not be confirmed live from the build
-  environment, so the fallback is always shown alongside.
+  and grants no device permissions. Links open in a new tab. All 41 exercises
+  carry a curated tutorial, each id resolved through YouTube's oembed endpoint
+  with the returned title recorded beside it in `lib/train/exercises.ts`. The
+  YouTube search fallback stays alongside regardless, because an upload can be
+  pulled at any time and a dead link while she is standing at a machine is the
+  failure worth designing out.
 - **Diagrams are drawn in-house.** `components/muscle-map.tsx` is plain SVG: no
   outbound request, works offline, renders identically everywhere.
 - **The font is self-hosted** at build time via `next/font`, so a page renders

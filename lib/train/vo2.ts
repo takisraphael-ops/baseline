@@ -37,8 +37,9 @@ export function rockportVo2(
 }
 
 /**
- * Cooper 12-minute test. Requires a genuinely maximal effort, so it is gated to
- * week 6 and later. Fully metric.
+ * Cooper 12-minute test. Requires a genuinely maximal effort, so the cardio page
+ * recommends holding it until week 6 — that is advisory copy, not a gate, and
+ * nothing here enforces it. Fully metric.
  */
 export function cooperVo2(metres: number): number {
   return (metres - 504.9) / 44.73;

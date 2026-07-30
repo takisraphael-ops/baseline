@@ -188,18 +188,7 @@ h3 { font-size: 16px; }
 }
 .card-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
 
-.sunken {
-  background: var(--bg-sunken);
-  border-radius: var(--radius-sm);
-}
-
-.stat { background: var(--bg-sunken); border-radius: var(--radius-sm); padding: 14px; }
-.stat-label {
-  font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--text-muted); margin-bottom: 4px;
-}
 .stat-value { font-size: 22px; font-weight: 600; color: var(--text); }
-.stat-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
 
 .label {
   font-size: 12px; font-weight: 500; color: var(--text-muted);
@@ -230,18 +219,6 @@ h3 { font-size: 16px; }
 }
 .input-num::-webkit-outer-spin-button,
 .input-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
-/* The native dropdown arrow eats the whole field at this width and clips the
-   digit. The control is still a real select — it just shows the value instead. */
-.select-bare {
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: none;
-  text-align: center;
-  text-align-last: center;
-  padding-left: 0;
-  padding-right: 0;
-}
 
 /* Stepper: the value stays visible and readable, and both controls are
    thumb-sized. Typing on a phone mid-set is the thing to design out. */
@@ -371,23 +348,6 @@ h3 { font-size: 16px; }
 .divider { border-top: 1px solid var(--border); }
 .muted { color: var(--text-muted); }
 .faint { color: var(--text-faint); }
-
-.tabs {
-  display: flex; gap: 2px;
-  background: var(--bg-sunken);
-  padding: 4px;
-  border-radius: var(--radius);
-}
-.tab {
-  flex: 1; min-width: max-content;
-  padding: 9px 14px;
-  border-radius: 8px;
-  font-size: 13.5px; font-weight: 500;
-  color: var(--text-muted);
-  white-space: nowrap;
-  transition: background 150ms ease, color 150ms ease;
-}
-.tab.active { background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow-sm); }
 
 /* Numbered setup steps, and the mistakes list. The number is information —
    these really are ordered — so it earns the badge. */
