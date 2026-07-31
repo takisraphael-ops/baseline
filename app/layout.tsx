@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import './globals.css';
 import Nav from '@/components/nav';
+import { THEME_BOOT_SCRIPT } from '@/lib/train/theme';
 
 // Self-hosted at build time rather than pulled from a CDN at run time: the app
 // is meant to work in a gym basement with no signal, and a blocking stylesheet
@@ -25,7 +26,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#4F46E5',
+  // The app's accent. This was the indigo the project template shipped with,
+  // which appears nowhere in the app; the manifest and the standalone build
+  // were corrected earlier and this one was missed.
+  themeColor: '#0a7683',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -33,7 +37,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        {/* Applies the saved theme before the first paint. Without it the page
+            paints in the OS colours and then swaps once React hydrates — a white
+            flash on a dark-mode phone, in a dim gym. Mirrored in demo/build.mjs. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-screen">
         {/* Server-rendered ahead of the app, so it is in the first paint rather
             than appearing once React has hydrated. Clears itself on a CSS

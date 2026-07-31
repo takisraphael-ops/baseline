@@ -1072,3 +1072,185 @@ h3 { font-size: 16px; }
   fill: var(--text-muted);
   pointer-events: none;
 }
+
+/* ============================================================== motion pass */
+/* House rule for everything below: fast, small, and physical. A phone held one
+   handed between sets is the wrong place for anything that sweeps or bounces —
+   the point is confirming a tap landed, not putting on a show. Every duration
+   here is under 200ms, and the global prefers-reduced-motion rule at the bottom
+   of this file collapses all of it to nothing. */
+
+/* Press feedback. Scale rather than colour, because the finger is covering the
+   colour at the moment it changes. */
+.btn:active:not(:disabled),
+.chip-tap:active,
+.seg-btn:active,
+.stepper-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.btn { transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease, transform 90ms ease; }
+.stepper-btn { transition: background 120ms ease, transform 90ms ease; }
+
+/* Cards that are links get a lift on hover and a press on tap. Hover is gated
+   to devices that actually have a pointer, so a phone never sticks in the hover
+   state after a tap. */
+a.card, button.card {
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+@media (hover: hover) {
+  a.card:hover, button.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+  }
+}
+a.card:active, button.card:active { transform: scale(0.985); }
+
+/* Screens fade up as they mount. 160ms and 6px — enough to read as a change of
+   place, not enough to wait for. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+main > * { animation: rise-in 160ms ease-out both; }
+
+/* ========================================================= segmented control */
+.seg {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-sunken);
+  border-radius: var(--radius);
+}
+.seg-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 90ms ease;
+}
+.seg-btn.is-on {
+  background: var(--bg-elev);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ============================================================ wheel picker */
+/* Opened by tapping a set's number. The steppers still do ±1; this is for the
+   jump the steppers are bad at — 40 kg to 60 kg is four taps at a 5 kg step. */
+.wheel-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(6, 8, 12, 0.5);
+  backdrop-filter: blur(2px);
+  animation: wheel-fade 140ms ease-out;
+}
+.wheel-sheet {
+  width: 100%;
+  max-width: 32rem;
+  background: var(--bg-elev);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  box-shadow: var(--shadow-md);
+  animation: wheel-up 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes wheel-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes wheel-up { from { transform: translateY(14px); } to { transform: none; } }
+
+.wheel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.wheel { position: relative; }
+/* The lens. Sits above the list and ignores pointer events so a flick still
+   lands on the numbers underneath. */
+.wheel-lens {
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+  border-top: 1px solid var(--accent);
+  border-bottom: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}
+.wheel-unit {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.wheel-list {
+  height: 220px;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  /* Fades the ends so the wheel reads as a cylinder rather than a list. */
+  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+}
+.wheel-list::-webkit-scrollbar { display: none; }
+.wheel-pad { height: 88px; }
+.wheel-item {
+  display: block;
+  width: 100%;
+  height: 44px;
+  scroll-snap-align: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 19px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums lining-nums;
+  transition: color 120ms ease, transform 120ms ease, font-weight 120ms ease;
+}
+/* The magnified one. */
+.wheel-item.is-live {
+  color: var(--text);
+  font-size: 23px;
+  font-weight: 700;
+  transform: scale(1.06);
+}
+
+/* ================================================================ hero card */
+/* The one card on Today that is a destination rather than information. It gets
+   an accent edge and a wash rather than a louder colour, so it still belongs to
+   the same stack as everything under it — a fully filled card would read as an
+   alert, which is the wrong tone for the first thing she sees. */
+.card.hero {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  background:
+    radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+    var(--card-sheen),
+    var(--bg-elev);
+  box-shadow: var(--shadow-sm), var(--glow);
+}
+@media (hover: hover) {
+  a.card.hero:hover { border-color: var(--accent); }
+}
