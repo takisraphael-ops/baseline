@@ -68,9 +68,59 @@ console.log('\n--- VO2 max estimation ---');
 // 132.853 - 0.16953(62) - 0.3877(25) + 0 - 3.2649(15) - 0.1565(150)
 const rock = rockportVo2(62, 25, 'female', 15, 150);
 expect('Rockport estimate (2 dp)', Math.round(rock * 100) / 100, 40.2);
-expect('Rockport classified', classifyVo2(rock), 'Good');
 // Male coefficient adds exactly 6.315.
 expect('Rockport sex term', Math.round((rockportVo2(62, 25, 'male', 15, 150) - rock) * 1000) / 1000, 6.315);
+
+// The rating is per sex AND per age band. One table applied to everyone is how
+// this behaved before: a 45-year-old man was rated against women aged 20-29,
+// and nothing on the screen said so.
+expect('Rockport classified', classifyVo2(rock, 'female', 25)?.label, 'Good');
+expect('...against her own cohort', classifyVo2(rock, 'female', 25)?.cohort, 'women aged 20–29');
+// Same number, different athlete, different verdict. If these ever agree the
+// per-cohort lookup has collapsed back to a single table.
+expect('40.2 is Good for a woman of 25', classifyVo2(40.2, 'female', 25)?.label, 'Good');
+expect('40.2 is Poor for a man of 25', classifyVo2(40.2, 'male', 25)?.label, 'Poor');
+expect('40.2 is Excellent for a woman of 45', classifyVo2(40.2, 'female', 45)?.label, 'Excellent');
+expect('cohort text follows the age band', classifyVo2(40.2, 'male', 35)?.cohort, 'men aged 30–39');
+
+// Band edges, both sexes, so an off-by-one in the table is caught rather than
+// averaged away.
+expect('woman 20-29, 50 is Superior', classifyVo2(50, 'female', 25)?.label, 'Superior');
+expect('woman 20-29, 49.9 is Excellent', classifyVo2(49.9, 'female', 25)?.label, 'Excellent');
+expect('man 20-29, 56 is Superior', classifyVo2(56, 'male', 25)?.label, 'Superior');
+expect('man 20-29, 41.9 is Poor', classifyVo2(41.9, 'male', 25)?.label, 'Poor');
+
+// Outside the sourced tables it must return null so the caller shows nothing.
+// Borrowing a neighbouring band to fill the gap is the defect, not the fix.
+expect('no band for a 55-year-old', classifyVo2(40, 'female', 55), null);
+expect('no band for a 19-year-old', classifyVo2(40, 'male', 19), null);
+expect('boundary 49 is still covered', classifyVo2(40, 'female', 49)?.label !== undefined, true);
+expect('boundary 50 is not', classifyVo2(40, 'female', 50), null);
+// Every published band must be monotonically descending, or `find` returns the
+// wrong label for a value that sits under two thresholds.
+for (const sex of ['female', 'male'] as const) {
+  for (const age of [25, 35, 45]) {
+    const cuts = [70, 55, 50, 45, 40, 35, 30, 20].map((v) => classifyVo2(v, sex, age)!.label);
+    const rank = ['Superior', 'Excellent', 'Good', 'Fair', 'Poor'];
+    const idx = cuts.map((c) => rank.indexOf(c));
+    expect(`${sex} ${age}: labels never improve as the score falls`, idx.every((v, i) => i === 0 || v >= idx[i - 1]), true);
+  }
+}
+
+// The profile must actually carry the answer through to both. Hardcoding it in
+// onboarding is what made every athlete female regardless of what they were.
+{
+  const ob = readFileSync(new URL('../components/onboarding.tsx', import.meta.url), 'utf8');
+  expect('onboarding does not hardcode sex', /sex:\s*'(female|male)'/.test(ob), false);
+  expect('onboarding asks for it', ob.includes('<SexPicker'), true);
+  const set = readFileSync(new URL('../app/settings/page.tsx', import.meta.url), 'utf8');
+  expect('settings can correct it', set.includes('<SexPicker'), true);
+  const cardio = readFileSync(new URL('../app/cardio/page.tsx', import.meta.url), 'utf8');
+  // The cohort used to be a hardcoded sentence next to a table-driven label.
+  expect('cardio page states no fixed cohort', /for women aged/.test(cardio), false);
+  expect('cardio page reads the cohort from the rating', cardio.includes('rating.cohort'), true);
+  expect('cardio page rates against the profile', cardio.includes('classifyVo2(latest.vo2max, p.sex, p.age)'), true);
+}
 
 // Cooper: (2000 - 504.9) / 44.73
 expect('Cooper 2000 m (2 dp)', Math.round(cooperVo2(2000) * 100) / 100, 33.42);

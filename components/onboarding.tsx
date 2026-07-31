@@ -5,8 +5,9 @@ import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { getExercise } from '@/lib/train/exercises';
 import { QUESTIONS, cautions, startingLoad, strengthBand, strengthFactor, strengthIndex } from '@/lib/train/quiz';
 import type { Niggle, QuizAnswers } from '@/lib/train/quiz';
+import SexPicker from '@/components/sex-picker';
 import { saveProfile, todayISO } from '@/lib/train/store';
-import type { Profile } from '@/lib/train/types';
+import type { Profile, Sex } from '@/lib/train/types';
 
 // PAR-Q, then four numbers, then the strength quiz, then the result.
 // The quiz exists so the first session opens with weights that fit her rather
@@ -35,6 +36,10 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
   const [weightKg, setWeightKg] = useState('');
   const [restingHr, setRestingHr] = useState('');
   const [walk, setWalk] = useState('20');
+  // Defaulted rather than left empty, so the step cannot be blocked on it — but
+  // it is now on screen and changeable, which is the whole point. It was
+  // previously written straight into the profile with nothing to change it.
+  const [sex, setSex] = useState<Sex>('female');
   const [qIndex, setQIndex] = useState(0);
   const [answers, setAnswers] = useState<Partial<QuizAnswers>>({ niggles: [] });
 
@@ -65,7 +70,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
       age: Number(age) || 25,
       weightKg: bw,
       restingHr: Number(restingHr) || 65,
-      sex: 'female',
+      sex,
       startDate: todayISO(),
       parqCleared: !anyYes,
       walkMinutesEachWay: Number(walk) || 20,
@@ -201,6 +206,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
             For the pulse: count it on waking, before getting up, three mornings running. Leave it as
             65 for now if you have not.
           </p>
+          <SexPicker value={sex} onChange={setSex} />
         </div>
         <div className="flex gap-3">
           <button onClick={() => setStage('parq')} className="btn btn-ghost" aria-label="Back"><ArrowLeft size={16} /></button>
