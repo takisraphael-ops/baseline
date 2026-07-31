@@ -70,7 +70,15 @@ which happened to be one of the nine that worked. Enumerate.
 
 `main` deploys to GitHub Pages on every push, gated on typecheck, lint and the
 fixture run. The workflow builds `--client --standalone --require-font` and
-publishes that one file. Live at https://takisraphael-ops.github.io/baseline/
+publishes **two** files — `index.html` and `sw.js`. Live at
+https://takisraphael-ops.github.io/baseline/
+
+The second file is the offline cache, and it fails quietly. Registration asks
+for `./sw.js` relative to the page; a missing one 404s, the `.catch` swallows
+it, the app still loads, and the only symptom is that it stops working offline
+again — which nobody notices until they are in a basement with no signal. The
+workflow `test -s`s it and the fixture run asserts the workflow still copies it.
+Deploying the standalone build anywhere else has the same obligation.
 
 `--require-font` is deliberate: `demo/build.mjs` inlines the Inter subset that
 `next build` emits into `.next/static`, and without the flag a missing subset
@@ -78,10 +86,11 @@ only warns — CI goes green having shipped system fonts.
 
 ## Open
 
-- 32 of 41 exercises still fall back to a YouTube search rather than a specific
-  clip. Curating them needs `www.youtube.com` on the environment's network
-  allowlist; verify each id through the oEmbed endpoint rather than trusting
-  recall, and record the resolved title beside it.
+- All 41 exercises now carry a curated clip, each id resolved through YouTube's
+  oEmbed endpoint with the returned title recorded beside it. Any replacement
+  gets the same treatment — verify through oEmbed rather than trusting recall.
+  Keep the search fallback populated regardless; an upload can be pulled at any
+  time.
 - The machine names, plate increments and available dumbbells are educated
   guesses. The gym has a lying leg curl rather than a seated one — that was a
   lucky catch. The progression engine depends on those increments being right,
