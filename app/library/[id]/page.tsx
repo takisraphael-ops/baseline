@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight, PlayCircle, Search } from 'lucide-react';
 import Glossed from '@/components/glossed';
-import MuscleMap from '@/components/muscle-map';
+import BodyMap from '@/components/body-map';
 import Term from '@/components/term';
 import { EQUIPMENT_LABELS, EXERCISES, MUSCLE_LABELS, demoUrl, findExercise, hasCuratedVideo, ytSearch } from '@/lib/train/exercises';
 
@@ -47,7 +47,7 @@ export default function ExercisePage({ params }: { params: { id: string } }) {
       </header>
 
       <div className="card">
-        <MuscleMap primary={ex.primary} secondary={ex.secondary} labels className="w-full max-w-[280px] mx-auto" />
+        <BodyMap primary={ex.primary} secondary={ex.secondary} className="w-full max-w-[340px] mx-auto" />
         <div className="flex items-center justify-center gap-4 text-xs muted mt-1">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm inline-block" style={{ background: 'var(--accent)' }} /> Worked directly
