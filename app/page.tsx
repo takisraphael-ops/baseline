@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Footprints, HeartPulse, Sparkles } from 'lucide-react';
+import { Dumbbell, Footprints, HeartPulse, Sparkles } from 'lucide-react';
 import Glossed from '@/components/glossed';
 import Ignition from '@/components/ignition';
 import Onboarding from '@/components/onboarding';
@@ -67,12 +67,14 @@ export default function Today() {
       ) : (
         <Link
           href={`/session/${session.id}`}
-          className="card block"
+          className="card hero block"
           aria-label={`Start ${session.name} — ${session.focus}`}
         >
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <h2 className="text-xl font-semibold">{session.name}</h2>
+              {/* No "Next up" chip here: the page heading above already says it,
+                  and the greeting rotates through that exact phrase. */}
+              <h2 className="text-2xl font-semibold tracking-tight">{session.name}</h2>
               <p className="muted text-sm">{session.focus}</p>
             </div>
             <Ignition />
@@ -80,11 +82,14 @@ export default function Today() {
           <div className="divider my-3" />
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <dt className="muted text-xs uppercase tracking-wide">Main lift</dt>
+              <dt className="muted text-xs uppercase tracking-wide flex items-center gap-1.5">
+                <Dumbbell size={13} aria-hidden /> Main lift
+              </dt>
               <dd className="font-medium">{mainLift ? getExercise(mainLift.exerciseId).name : '—'}</dd>
             </div>
             <div>
-              <dt className="muted text-xs uppercase tracking-wide">Cardio</dt>
+              <dt className="muted text-xs uppercase tracking-wide flex items-center gap-1.5">
+                <HeartPulse size={13} aria-hidden /> Cardio</dt>
               <dd className="font-medium">
                 {session.cardio.kind === 'none'
                   ? 'Walk only'

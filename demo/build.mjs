@@ -122,7 +122,16 @@ const SPLASH = `<div class="splash" aria-hidden="true">
 </div>`;
 
 // --------------------------------------------------------------------- page
-const head = `<title>Baseline — twelve-week training plan</title>
+// Applies the saved theme before the first paint, in both targets — the
+// fragment runs it before the splash markup that follows, the standalone build
+// runs it from <head>. A second copy of lib/train/theme.ts's THEME_BOOT_SCRIPT,
+// for the same reason the splash markup is duplicated: this file cannot import
+// TypeScript, and the script has to execute before any bundle parses. The
+// fixture run fails if the two ever drift.
+const THEME_BOOT = `(function(){try{var t=localStorage.getItem('baseline.theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})();`;
+
+const head = `<script>${THEME_BOOT}</script>
+<title>Baseline — twelve-week training plan</title>
 <style>
 ${fontFace}
 :root { --font-inter: ${fontFace ? "'InterInline', " : ''}-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }

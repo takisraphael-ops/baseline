@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { Check, Minus, Plus } from 'lucide-react';
+import WheelPicker from '@/components/wheel-picker';
 import type { LoggedSet } from '@/lib/train/types';
 
 // One logged set.
@@ -15,6 +17,11 @@ import type { LoggedSet } from '@/lib/train/types';
 // column squeezed the number field down to 21px and clipped the very value this
 // control exists to show. Effort is asked once per exercise instead, in words,
 // by the control below the set list.
+//
+// Long-pressing or tapping the value opens a scroll wheel instead of the
+// keyboard. Steppers are the right tool for +1; they are the wrong tool for
+// 40 kg to 60 kg, which is four taps at a 5 kg step. The wheel is a flick, and
+// it lives in a sheet rather than in the row so this layout is untouched.
 
 interface Props {
   index: number;
@@ -33,6 +40,7 @@ interface Props {
 export default function SetRow({
   index, row, targetReps, stepKg, bodyweight, repsAreSeconds, done, onChange, onDone,
 }: Props) {
+  const [wheel, setWheel] = useState<'kg' | 'reps' | null>(null);
   const step = (field: 'kg' | 'reps', delta: number) => {
     const cur = row[field];
     const next = field === 'kg'
@@ -48,16 +56,17 @@ export default function SetRow({
       <button type="button" className="stepper-btn" onClick={() => step(field, -1)} disabled={disabled} aria-label={`${label} down`}>
         <Minus size={16} />
       </button>
+      {/* readOnly rather than a plain button: it keeps the same look, the same
+          grid column and the same accessible name, but a tap opens the wheel
+          instead of the phone keyboard. */}
       <input
-        type="number"
-        inputMode={field === 'kg' ? 'decimal' : 'numeric'}
-        step={field === 'kg' ? stepKg : 1}
+        type="text"
+        readOnly
         className="input input-num"
         value={disabled ? '' : value}
         disabled={disabled}
-        onChange={(e) => onChange({ [field]: Math.max(0, Number(e.target.value)) })}
-        onFocus={(e) => e.target.select()}
-        aria-label={label}
+        onClick={() => !disabled && setWheel(field)}
+        aria-label={`${label}. Tap to pick from a wheel.`}
       />
       <button type="button" className="stepper-btn" onClick={() => step(field, 1)} disabled={disabled} aria-label={`${label} up`}>
         <Plus size={16} />
@@ -79,6 +88,24 @@ export default function SetRow({
       >
         <Check size={18} />
       </button>
+
+      {wheel && (
+        <WheelPicker
+          open
+          title={wheel === 'kg'
+            ? `Set ${index + 1} — weight`
+            : `Set ${index + 1} — ${repsAreSeconds ? 'seconds' : 'reps'}`}
+          unit={wheel === 'kg' ? 'kg' : repsAreSeconds ? 'sec' : 'reps'}
+          value={wheel === 'kg' ? row.kg : row.reps}
+          step={wheel === 'kg' ? stepKg : 1}
+          min={0}
+          // Wide enough to cover anything she will ever log, and no wider —
+          // every extra row is scroll distance on the flick this exists for.
+          max={wheel === 'kg' ? Math.max(60, Math.ceil((row.kg + 60) / stepKg) * stepKg) : 60}
+          onPick={(v) => onChange({ [wheel]: v })}
+          onClose={() => setWheel(null)}
+        />
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Download, Upload } from 'lucide-react';
+import ThemeToggle from '@/components/theme-toggle';
 import { clearAll, exportJson, isEphemeral, load, parseImport, save, saveProfile, todayISO } from '@/lib/train/store';
 import type { TrainState } from '@/lib/train/types';
 
@@ -73,6 +74,14 @@ export default function SettingsPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
       </header>
+
+      <section className="card">
+        <h2 className="card-title mb-1">Appearance</h2>
+        <p className="text-sm muted mb-3">
+          Auto follows your phone, including when it switches itself at night.
+        </p>
+        <ThemeToggle />
+      </section>
 
       {p && (
         <section className="card space-y-4">

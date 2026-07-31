@@ -16,6 +16,7 @@ import { EXERCISES, demoUrl, hasCuratedVideo } from '../lib/train/exercises';
 import { drillDemoUrl, prepFor, rampSets } from '../lib/train/mobility';
 import { alternativesFor } from '../lib/train/swaps';
 import { historyFor } from '../lib/train/store';
+import { THEME_BOOT_SCRIPT } from '../lib/train/theme';
 import { FIGURE } from '../lib/train/figure';
 import { BODY_REGIONS } from '../lib/train/body-regions';
 import { TERMS, getTerm, termIdForMatch } from '../lib/train/glossary';
@@ -506,6 +507,18 @@ console.log('\n--- Splash markup ---');
   expect('layout.tsx has three bars', (layout.match(/<i \/>/g) ?? []).length, 3);
   expect('build.mjs has three bars', (demo.match(/<i><\/i>/g) ?? []).length, 3);
   // Every class the markup uses has to actually be styled.
+  // The theme boot script is duplicated for the same reason the splash markup
+  // is: it has to run before any bundle parses, and demo/build.mjs cannot import
+  // TypeScript. Drift means the hosted build ignores a saved theme and flashes
+  // the wrong colours on launch — silent, and only visible on a real phone.
+  // Compare the RESOLVED script, not the source text: theme.ts builds it with
+  // a template placeholder for the storage key, so the two files never match
+  // character for character even when they behave identically.
+  const demoBoot = (demo.match(/\(function\(\)\{try\{var t=localStorage[^`]*\}\)\(\);/) ?? ['(not found)'])[0];
+  expect('demo/build.mjs runs the same theme boot script', demoBoot, THEME_BOOT_SCRIPT);
+  // It must come before the bundle, or the flash it exists to prevent happens.
+  expect('Boot script precedes the app bundle', demo.indexOf('THEME_BOOT') < demo.indexOf('<div id="root">'), true);
+
   const css = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
   for (const c of want.split(',')) expect(`.${c} is styled`, css.includes(`.${c}`), true);
   // The brief was two seconds. Keep it honest.
