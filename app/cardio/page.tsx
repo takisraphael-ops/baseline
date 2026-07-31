@@ -40,6 +40,11 @@ export default function CardioPage() {
   const tests = [...state.tests].sort((a, b) => a.date.localeCompare(b.date));
   const latest = tests[tests.length - 1];
   const first = tests[0];
+  // Rated against who she is now. A stored result keeps the number it was
+  // calculated with — correcting a profile does not rewrite history — but the
+  // comparison band is read live, so fixing a wrong age or sex in Settings
+  // fixes the label immediately.
+  const rating = latest ? classifyVo2(latest.vo2max, p.sex, p.age) : null;
 
   const submit = () => {
     const vo2 =
@@ -164,7 +169,13 @@ export default function CardioPage() {
             </p>
             <p className="text-sm muted mt-1">
               Estimated — likely between {vo2Band(latest.vo2max).low.toFixed(0)} and{' '}
-              {vo2Band(latest.vo2max).high.toFixed(0)}. {classifyVo2(latest.vo2max)} for women aged 20–29.
+              {vo2Band(latest.vo2max).high.toFixed(0)}.
+              {/* Rated against this athlete's own sex and age band, or not at
+                  all. classifyVo2 returns null outside the published tables and
+                  the sentence simply stops — a rating borrowed from a
+                  neighbouring cohort would be worse than none, and the number
+                  above it is what the programme actually tracks. */}
+              {rating && ` ${rating.label} for ${rating.cohort}.`}
             </p>
             {first && first !== latest && (
               <p className="text-sm mt-2">

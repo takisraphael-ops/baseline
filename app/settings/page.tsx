@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Download, Upload } from 'lucide-react';
+import SexPicker from '@/components/sex-picker';
 import ThemeToggle from '@/components/theme-toggle';
 import { clearAll, exportJson, isEphemeral, load, parseImport, save, saveProfile, todayISO } from '@/lib/train/store';
 import type { TrainState } from '@/lib/train/types';
@@ -107,6 +108,10 @@ export default function SettingsPage() {
             <input id="w" type="number" inputMode="decimal" className="input input-num" defaultValue={p.weightKg} onBlur={(e) => patch('weightKg', Number(e.target.value))} />
             <p className="text-xs muted mt-1">Used only for the VO2 max estimate.</p>
           </div>
+          {/* Changing this does not rewrite stored results — each test keeps the
+              number it was calculated with — but it does correct the population
+              comparison shown against the latest one, and every future test. */}
+          <SexPicker value={p.sex} onChange={(sex) => { saveProfile({ ...p, sex }); setState(load()); }} />
           <div>
             <label htmlFor="hr" className="label mb-1.5">Resting heart rate (bpm)</label>
             <input id="hr" type="number" inputMode="numeric" className="input input-num" defaultValue={p.restingHr} onBlur={(e) => patch('restingHr', Number(e.target.value))} />

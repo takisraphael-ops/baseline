@@ -332,6 +332,14 @@ The Rockport coefficient is the published pounds coefficient pre-converted
 labelled *estimated* with a ±12% band, and a change smaller than half that band
 is reported as noise rather than progress.
 
+The sex term is worth 6.315 ml/kg/min, so it is asked at setup rather than
+assumed — see `components/sex-picker.tsx` for why that is the only thing the
+field is used for. The population comparison is looked up per sex **and** per
+age band (Cooper Institute ACLS bands, 20–49). Outside that range
+`classifyVo2` returns null and the surface shows the estimate with no rating:
+a band borrowed from a neighbouring cohort is worse than none, and the number
+itself is what the programme tracks.
+
 ---
 
 ## 6. Architecture
@@ -373,3 +381,9 @@ it. The optional "how did that feel?" field is never scored or interpreted.
    available and would improve the machine-stack fallback most of all.
 4. **Weeks 13+ are not generated.** After week 12 the app tells her to re-test
    and run it again from the new numbers. Automatic regeneration is a later job.
+5. **VO2 norms cover ages 20–49 only.** Both sexes, from the Cooper Institute
+   bands that could be sourced and checked. An athlete of 50+ gets the estimate,
+   the error band and the trend — everything the programme acts on — but no
+   population rating, because nothing is shown that has not been verified.
+   Extending it means finding the 50–59 and 60+ rows in a citable form, not
+   extrapolating the ones already there.

@@ -155,14 +155,23 @@ export interface CardioTest {
   vo2max: number;
 }
 
+/**
+ * Which published equation and which population table apply — not an identity
+ * field. The Rockport equation carries a sex term worth 6.3 ml/kg/min and the
+ * norms are published as two tables, so both need an answer; nothing else in
+ * the app reads it. Starting weights come from the quiz, which measures what
+ * the athlete can actually do.
+ */
+export type Sex = 'female' | 'male';
+
 export interface Profile {
   name: string;
   age: number;
   weightKg: number;
   /** Measured on waking. Feeds the Karvonen zone bands. */
   restingHr: number;
-  /** Used by the Rockport estimate only. */
-  sex: 'female' | 'male';
+  /** Used by the VO2 max estimate and its population comparison, nothing else. */
+  sex: Sex;
   startDate: string;
   parqCleared: boolean;
   walkMinutesEachWay: number;
