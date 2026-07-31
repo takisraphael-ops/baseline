@@ -23,6 +23,67 @@ export interface Article {
   body: { h?: string; p?: string[]; list?: string[] }[];
 }
 
+export type LearnCategory = 'foundations' | 'techniques' | 'nutrition' | 'glossary';
+
+/**
+ * The four groups the Learn index offers as a filter, in ring order.
+ *
+ * Derived rather than stored on each article: an article's category already
+ * follows from `topic` and `unlocksWeek`, and a third field to keep in step
+ * with those two is a field that will eventually disagree with them.
+ *
+ * `short` is what fits inside a quarter of the selector at 320px. `blurb` is
+ * the framing that used to sit above each section heading, and still needs
+ * saying — particularly the food one.
+ */
+export const LEARN_CATEGORIES: {
+  id: LearnCategory;
+  label: string;
+  short: string;
+  blurb?: string;
+}[] = [
+  {
+    id: 'foundations',
+    label: 'Foundations',
+    short: 'Foundations',
+    blurb: 'The ideas the programme itself runs on. Start anywhere — none of them depends on another.',
+  },
+  {
+    id: 'techniques',
+    label: 'Techniques',
+    short: 'Techniques',
+    blurb:
+      'Explained now, used later. A beginner already gets close to the maximum available result from ordinary straight sets — these add fatigue before they add benefit, so each one arrives when it will actually do something.',
+  },
+  {
+    id: 'nutrition',
+    label: 'Food and fuel',
+    short: 'Food & fuel',
+    blurb:
+      'Background reading, not instructions. The programme sets no calorie target and no weight goal, and nothing here asks you to weigh or log anything — these pages are here so the vocabulary stops being mysterious. If thinking carefully about food is difficult for you, they are optional, and skipping them costs you nothing.',
+  },
+  {
+    id: 'glossary',
+    label: 'Glossary',
+    short: 'Glossary',
+    blurb: 'Every word the app uses, on one page. Start here if anything on a screen is unfamiliar.',
+  },
+];
+
+/** Exactly one category per article, and every article has one. */
+export function categoryOf(a: Article): LearnCategory {
+  if (a.slug === 'glossary') return 'glossary';
+  if (a.topic === 'nutrition') return 'nutrition';
+  if (a.unlocksWeek !== undefined) return 'techniques';
+  return 'foundations';
+}
+
+/** Techniques read best in the order they unlock; everything else keeps authoring order. */
+export function articlesIn(id: LearnCategory): Article[] {
+  const list = ARTICLES.filter((a) => categoryOf(a) === id);
+  return id === 'techniques' ? [...list].sort((a, b) => a.unlocksWeek! - b.unlocksWeek!) : list;
+}
+
 /**
  * The glossary page is built from the same list that powers the tap-to-explain
  * popovers, so a definition can only ever be written once. Editing a term

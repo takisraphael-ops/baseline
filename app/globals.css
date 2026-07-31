@@ -983,3 +983,92 @@ h3 { font-size: 16px; }
      right outcome — no launch animation at all, straight into the app. */
   .splash { display: none; }
 }
+
+/* ============================================================ learn radial */
+/* The category filter on Learn. Four wedges and a centre that clears them.
+   Sized so the whole ring fits inside the narrowest phone this app targets
+   without the labels colliding — at 320px the viewBox scales, the text does
+   not, which is why the labels are short words rather than the full headings. */
+.learn-radial {
+  display: flex;
+  justify-content: center;
+}
+.learn-radial svg {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  overflow: visible;
+}
+
+.learn-wedge,
+.learn-hub.is-active {
+  cursor: pointer;
+}
+/* Wedges wear the same surface as a card, so the ring belongs to the same
+   family as everything under it rather than reading as a flat grey disc. */
+.learn-wedge path {
+  fill: var(--bg-elev);
+  stroke: var(--border);
+  stroke-width: 1.5;
+  transition: fill 160ms ease, stroke 160ms ease;
+}
+.learn-wedge:hover path {
+  fill: var(--bg-sunken);
+  stroke: var(--border-strong);
+}
+.learn-wedge.is-on path,
+.learn-wedge.is-on:hover path {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.learn-wedge-label {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--text);
+  pointer-events: none;
+}
+.learn-wedge-count {
+  font-size: 11px;
+  fill: var(--text-muted);
+  pointer-events: none;
+}
+.learn-wedge-text.is-on .learn-wedge-label,
+.learn-wedge-text.is-on .learn-wedge-count {
+  fill: var(--on-accent);
+}
+/* Labels are painted after every wedge, so they must not swallow the taps
+   meant for the wedge underneath. */
+.learn-wedge-text { pointer-events: none; }
+
+/* SVG groups get no focus ring of their own, and the selected wedge is already
+   filled with the accent — so the ring is drawn in text colour to stay visible
+   against both states. */
+.learn-wedge:focus-visible,
+.learn-hub:focus-visible {
+  outline: none;
+}
+.learn-wedge:focus-visible path,
+.learn-hub:focus-visible circle {
+  stroke: var(--text);
+  stroke-width: 3;
+}
+
+.learn-hub circle {
+  fill: var(--bg-elev);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+/* Sized to the widest label the hub ever shows ("Food & fuel") against the
+   80-unit circle it sits in. At 15px that string ran over the edge onto the
+   wedges behind it. */
+.learn-hub-title {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--text);
+  pointer-events: none;
+}
+.learn-hub-sub {
+  font-size: 11px;
+  fill: var(--text-muted);
+  pointer-events: none;
+}

@@ -19,7 +19,7 @@ import { historyFor } from '../lib/train/store';
 import { FIGURE } from '../lib/train/figure';
 import { BODY_REGIONS } from '../lib/train/body-regions';
 import { TERMS, getTerm, termIdForMatch } from '../lib/train/glossary';
-import { ARTICLES, getArticle } from '../lib/train/learn';
+import { ARTICLES, LEARN_CATEGORIES, articlesIn, getArticle } from '../lib/train/learn';
 import type { QuizAnswers } from '../lib/train/quiz';
 import type { LoggedExercise, LoggedSet, SessionLog } from '../lib/train/types';
 
@@ -608,6 +608,23 @@ for (const id of usedIds) expect(`Term "${id}" exists`, getTerm(id) !== undefine
 for (const a of ARTICLES) {
   if (a.unlocksWeek !== undefined) expect(`${a.slug} unlocks within the programme`, a.unlocksWeek >= 1 && a.unlocksWeek <= 12, true);
 }
+
+// The Learn index offers four categories and nothing else, so an article that
+// falls outside them would be unreachable from that page — the filter has no
+// "everything else" bucket to catch it.
+const catIds = LEARN_CATEGORIES.map((c) => c.id);
+const binned = catIds.flatMap((id) => articlesIn(id));
+expect('Every article lands in exactly one category', binned.length, ARTICLES.length);
+expect('No article is binned twice', new Set(binned.map((a) => a.slug)).size, ARTICLES.length);
+for (const id of catIds) expect(`Category "${id}" is not empty`, articlesIn(id).length > 0, true);
+
+// The ring shows a count per wedge; it comes from the same helper the list does.
+const techniques = articlesIn('techniques');
+expect(
+  'Techniques are ordered by the week they unlock',
+  techniques.map((a) => a.unlocksWeek).join(','),
+  [...techniques].sort((a, b) => a.unlocksWeek! - b.unlocksWeek!).map((a) => a.unlocksWeek).join(','),
+);
 
 // ------------------------------------------------------------------- figure
 console.log('\n--- Body map figure ---');
