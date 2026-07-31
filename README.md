@@ -90,6 +90,12 @@ served from a static host has no viewport meta, so every phone lays it out at
 shipping system fonts when the Inter subset is missing. `.github/workflows/pages.yml`
 uses all three flags; `scripts/fixture-run.ts` asserts the standalone contract.
 
+`--standalone` also emits a second file, `demo/dist/sw.js`, and only that target
+does — a service worker must live at a real URL, and the artifact host serves
+the single fragment it is handed and nothing beside it. Whatever deploys the
+standalone build has to copy both files, or registration 404s and the app goes
+back to failing offline with nothing in any log to say so.
+
 Two outputs from one entry, switched by a `__PREVIEW__` define:
 
 - **Preview** carries three weeks of sample history (`demo/seed.ts`) so Progress
@@ -102,10 +108,22 @@ Two outputs from one entry, switched by a `__PREVIEW__` define:
 ## Design decisions
 
 - **Data is device-local.** Everything lives in `localStorage` behind
-  `lib/train/store.ts`. No account, no login before a set, works offline, nothing
-  to breach. Trade-off: no cross-device sync, so there is an explicit JSON
-  export/import in Settings. Because every read and write goes through one
-  module, a sync backend can be added later without touching a component.
+  `lib/train/store.ts`. No account, no login before a set, nothing to breach.
+  Trade-off: no cross-device sync, so there is an explicit JSON export/import in
+  Settings. Because every read and write goes through one module, a sync backend
+  can be added later without touching a component.
+- **Offline is a cached document, not a hope.** The standalone build registers a
+  service worker that caches the one HTML file and serves it cache-first. Before
+  it existed, "works offline" was true only while the tab stayed open or the
+  browser's HTTP cache copy stayed fresh — about ten minutes on Pages — and a
+  pull-to-refresh failed offline however fresh that copy was, because a reload
+  sends `no-cache` and the browser will not fall back to its own cache. Which is
+  the reflex when a page looks stuck, in exactly the basement this is for.
+  Cache-first rather than the usual network-first on purpose: a phone associated
+  with an access point that has no route out hangs rather than failing fast.
+  The staleness that buys is bounded at one launch — the cache is keyed on a
+  hash of the bundle, `updateViaCache: 'none'` stops the worker itself being
+  served stale, and `activate` purges every older cache.
 - **Videos are linked, never embedded.** The app sets `X-Frame-Options: DENY`
   and grants no device permissions. Links open in a new tab. All 41 exercises
   carry a curated tutorial, each id resolved through YouTube's oembed endpoint

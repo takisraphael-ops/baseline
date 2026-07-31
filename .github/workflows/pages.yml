@@ -60,12 +60,19 @@ jobs:
 
       - run: node demo/build.mjs --client --standalone --require-font
 
-      # Ship exactly one file. Pages serves index.html at the site root, and
-      # nothing else in demo/dist belongs on a public host.
+      # Ship two files, and no more. Pages serves index.html at the site root;
+      # sw.js has to sit beside it because a service worker can only control
+      # pages at or below its own path, and the app registers './sw.js'. Nothing
+      # else in demo/dist belongs on a public host.
+      #
+      # If sw.js goes missing the registration 404s, the failure is swallowed,
+      # and the app is offline-hostile again with nothing in the log to say so —
+      # hence the test below rather than trust.
       - name: Assemble the site
         run: |
           mkdir -p _site
           cp demo/dist/index.html _site/index.html
+          cp demo/dist/sw.js _site/sw.js
           # Pages runs a Jekyll pass by default, which ignores files and
           # directories beginning with an underscore. Nothing here starts with
           # one today, but this costs nothing and removes a whole class of
@@ -73,7 +80,9 @@ jobs:
           touch _site/.nojekyll
           ls -la _site
           test -s _site/index.html
+          test -s _site/sw.js
           grep -q 'name="viewport"' _site/index.html
+          grep -q "register('./sw.js'" _site/index.html
 
       - uses: actions/upload-pages-artifact@v3
         with:

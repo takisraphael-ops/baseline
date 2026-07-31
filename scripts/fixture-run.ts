@@ -546,6 +546,57 @@ console.log('\n--- Build targets ---');
   expect('--standalone writes index.html', build.includes("? 'index.html'"), true);
 }
 
+console.log('\n--- Offline cache ---');
+// Without a service worker the app works offline only while the browser's HTTP
+// cache still holds a fresh copy of the document — measured at roughly ten
+// minutes on Pages — and a pull-to-refresh fails offline however fresh that
+// copy is, because a reload sends no-cache and the browser will not fall back
+// to its own cache. That is the failure this covers: the reflex when a page
+// looks stuck is to swipe down, in exactly the basement this app is for.
+{
+  const build = readFileSync(new URL('../demo/build.mjs', import.meta.url), 'utf8');
+  const sw = build.slice(build.indexOf('const SW = `'), build.indexOf('const SW_REGISTER'));
+  const doc = build.slice(build.indexOf('const document = `'), build.indexOf('const html = isStandalone'));
+  const frag = build.slice(build.indexOf('const fragment = `'), build.indexOf('const document = `'));
+
+  expect('standalone build registers the worker', doc.includes('${SW_REGISTER}'), true);
+  // The artifact host serves one fragment and nothing beside it, so ./sw.js
+  // would 404 there. Registering must stay standalone-only.
+  expect('artifact fragment does not register a worker', /serviceWorker|sw\.js/.test(frag), false);
+  expect('sw.js is written for --standalone only', build.includes("if (isStandalone) writeFileSync(resolve(out, 'sw.js'), SW)"), true);
+  expect('registration is guarded for file://', build.includes('window.isSecureContext'), true);
+  // Without this the browser may serve the worker itself from the HTTP cache,
+  // and a shipped build can go unnoticed for as long as that copy lives.
+  expect('registration bypasses the HTTP cache for sw.js', build.includes("updateViaCache:'none'"), true);
+
+  // Cache-first. Network-first hangs on a wifi access point with no route out,
+  // which is the exact condition a gym basement produces.
+  expect('worker serves the cached shell first', /return hit \|\| \(await fresh\)/.test(sw), true);
+  expect('worker still revalidates in the background', sw.includes('cache.put(SHELL, res.clone())'), true);
+  // A redirected response cannot be returned from respondWith for a navigation,
+  // and caching one poisons every launch after it.
+  expect('worker refuses to cache a redirect', sw.includes('!res.redirected'), true);
+  // Installing from the stale copy the new build replaces would pin it.
+  expect('install bypasses the HTTP cache', sw.includes("cache: 'reload'"), true);
+  // A cache keyed on build content, purged on activate, is what stops an old
+  // build living forever — the risk that comes free with any service worker.
+  expect('cache name carries the build id', sw.includes("const CACHE = 'baseline-${buildId}'"), true);
+  expect('build id is derived from the bundle', /createHash\('sha256'\)\s*\.update\(js\)/.test(build), true);
+  expect('activate purges older caches', sw.includes('await caches.delete(key)'), true);
+  expect('activate takes over open pages', sw.includes('self.clients.claim()'), true);
+  expect('install activates without waiting', sw.includes('self.skipWaiting()'), true);
+  // Everything that is not a page load must pass straight through.
+  expect('worker only handles navigations', sw.includes("if (event.request.mode !== 'navigate') return;"), true);
+
+  // The worker has to be deployed beside the page or registration 404s, the
+  // catch swallows it, and nothing anywhere says the app went back to failing
+  // offline. The workflow is the only place that can get this wrong.
+  const wf = readFileSync(new URL('../.github/workflows/pages.yml', import.meta.url), 'utf8');
+  expect('the workflow deploys sw.js', wf.includes('cp demo/dist/sw.js _site/sw.js'), true);
+  expect('the workflow fails if sw.js is empty', wf.includes('test -s _site/sw.js'), true);
+  expect('the workflow checks the page registers it', wf.includes(`grep -q "register('./sw.js'" _site/index.html`), true);
+}
+
 console.log('\n--- Demo links ---');
 // Every Watch button must go somewhere. `videoUrl: ''` is how "not curated
 // yet" is spelled, and an href of "" is a link to nowhere that fails silently
