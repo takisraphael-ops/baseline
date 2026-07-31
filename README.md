@@ -32,8 +32,11 @@ how to set a machine up or how hard a set is meant to feel.
 - **Cardio** — heart-rate zones from Tanaka and Karvonen, a Zone 2 prescription,
   an interval ramp building to the Norwegian 4×4, and VO2 max estimation from
   the Rockport walk test or the Cooper 12-minute test.
-- **Learn** — thirteen plain-English articles plus a glossary. Techniques are
-  explained immediately and unlocked on a schedule.
+- **Learn** — twenty plain-English articles plus a glossary. Techniques are
+  explained immediately and unlocked on a schedule. A separate "Food and fuel"
+  set explains nutrition vocabulary — protein, macros, energy balance,
+  supplements, the usual myths — as background reading only: no calorie target,
+  no weight goal, nothing to log.
 
 ## Stack
 

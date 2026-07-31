@@ -13,6 +13,13 @@ export interface Article {
   oneLiner: string;
   /** Week this technique becomes part of the programme. Omitted for concepts that always apply. */
   unlocksWeek?: number;
+  /**
+   * Groups the article on the Learn index. Omitted for the training articles,
+   * which are the default listing. Food and fuel is kept separate because it is
+   * background reading rather than something the programme acts on — nothing in
+   * the app reads these, sets a target from them, or asks her to log a meal.
+   */
+  topic?: 'nutrition';
   body: { h?: string; p?: string[]; list?: string[] }[];
 }
 
@@ -22,7 +29,7 @@ export interface Article {
  * updates the popover and this page together.
  */
 function glossarySections(): Article['body'] {
-  const groups: TermGroup[] = ['session', 'programme', 'cardio', 'exercise'];
+  const groups: TermGroup[] = ['session', 'programme', 'cardio', 'exercise', 'nutrition'];
   return [
     {
       p: [
@@ -504,6 +511,363 @@ export const ARTICLES: Article[] = [
         h: 'The hard part',
         p: [
           'Deload weeks feel like slacking, and the temptation to skip them is strong precisely when you most need one. Nobody has ever lost progress from an easy week. Plenty of people have lost months to pushing through one they should have taken.',
+        ],
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------- food and fuel
+  // Explanations, not instructions. The programme sets no calorie target, no
+  // weight target and no body-composition goal, and nothing here asks her to
+  // weigh, log or restrict anything — that boundary is in SPEC section 6 and it
+  // is deliberate. These pages exist so the vocabulary stops being mysterious,
+  // and so the one thing that genuinely limits building muscle — not eating
+  // enough to build with — is said plainly by something she already trusts.
+  {
+    slug: 'protein',
+    topic: 'nutrition',
+    title: 'Protein, in plain English',
+    oneLiner: 'The one part of eating that changes what your training gives back.',
+    body: [
+      {
+        p: [
+          'Lifting is the signal to build muscle. Protein is the material you build it out of. You can send a perfect signal for twelve weeks, and if the material is not there, not much arrives.',
+          'That is the whole reason protein gets talked about more than anything else in a gym. It is not magic and it is not a supplement — it is meat, fish, eggs, dairy, beans, lentils, tofu, and it is probably already on your plate.',
+        ],
+      },
+      {
+        h: 'What it actually is',
+        p: [
+          'Protein is made of twenty building blocks called amino acids. Your body can make eleven of them itself. The other nine have to come from food, which is the only reason eating protein is non-negotiable rather than optional.',
+          'A source that carries all nine in useful amounts is called a complete protein. Meat, fish, eggs, dairy and soy are complete. Most single plant foods are short of one or two — which is not a problem, it just means variety does the job that one food would otherwise do. Beans and rice are each short of something the other has, so a plate with both covers all nine.',
+        ],
+      },
+      {
+        h: 'Roughly how much',
+        p: [
+          'The research lands somewhere around 1.6 grams per kilogram of bodyweight per day for someone training to build muscle, and eating more than about 2.2 g/kg has not been shown to add anything. For a 60 kg person that is very roughly 95–130 g a day.',
+          'That is a reference point, not a target this app is setting for you — it does not track your food and it never will. It is here because "eat more protein" is useless advice without a sense of scale, and most people are surprised to find they are nowhere near.',
+        ],
+      },
+      {
+        h: 'What that looks like as food',
+        list: [
+          'A chicken breast — roughly 30 g',
+          'Two eggs — roughly 12 g',
+          'A tin of tuna — roughly 25 g',
+          'A 170 g pot of Greek yoghurt — roughly 15 g',
+          'A 400 g tin of lentils, drained — roughly 20 g',
+          'Half a block of firm tofu, about 150 g — roughly 20 g',
+          'A scoop of whey powder — roughly 25 g',
+        ],
+      },
+      {
+        h: 'Spread it out',
+        p: [
+          'Your body can only use so much at once for rebuilding. Three or four meals each carrying a decent amount beats one enormous protein dinner and two meals without any.',
+          'This is the single most useful change most people make, and it is not "eat more food" — it is "move some protein to breakfast", which is the meal where almost everyone has none.',
+        ],
+      },
+      {
+        h: 'The honest summary',
+        p: [
+          'If you get protein roughly right and train properly, the rest of the detail is worth very little by comparison. Nobody has ever failed to build muscle because their carbohydrate timing was wrong.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'macros',
+    topic: 'nutrition',
+    title: 'Macros: protein, carbs and fat',
+    oneLiner: 'Three words that cover almost everything you eat — and none of them is the enemy.',
+    body: [
+      {
+        p: [
+          'Food is mostly made of three things. Those three are the macronutrients, and "macros" is just shorthand for them. Everything else — vitamins, minerals, the micronutrients — comes along for the ride when you eat a reasonable variety.',
+        ],
+      },
+      {
+        h: 'Protein',
+        p: [
+          'The repair material. Covered properly on its own page, because for someone lifting it is the one that matters most.',
+        ],
+      },
+      {
+        h: 'Carbohydrate',
+        p: [
+          'Your body’s preferred fuel for hard work. Bread, rice, pasta, potatoes, oats, fruit.',
+          'Carbs are the reason a heavy set feels powerful rather than flat. Training hard on very few of them is possible, and it is also needlessly miserable — the last two reps of a set are exactly where you notice the tank is empty.',
+          'They have spent two decades being blamed for things they do not cause. A potato has never made anyone gain fat; eating more food than you use, consistently, over months, does that — and it does it whichever of the three the extra food came from.',
+        ],
+      },
+      {
+        h: 'Dietary fat',
+        p: [
+          'Fat you eat: olive oil, butter, nuts, avocado, oily fish. Worth separating from body fat, because sharing a word has caused an enormous amount of confusion. Eating fat does not make you fat.',
+          'You need some. It runs your hormones, and vitamins A, D, E and K need fat in the meal to be absorbed. Diets that drive it very low tend to feel bad in ways people struggle to place.',
+        ],
+      },
+      {
+        h: 'How they fit together',
+        p: [
+          'Get enough protein. Eat carbs around the days you train hard, because that is when they earn their keep. Do not fear fat. Fill the remaining space with food you actually want to eat.',
+          'That is genuinely the whole thing. Precision beyond this belongs to people stepping on stage at a physique competition, and it costs far more attention than it returns.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'energy-balance',
+    topic: 'nutrition',
+    title: 'Calories, without the anxiety',
+    oneLiner: 'What the number means, why direction beats precision, and why this app never sets you one.',
+    body: [
+      {
+        p: [
+          'A calorie is a unit of energy. That is all it is. It is not a score, not an allowance, and not a statement about whether a food is good — it measures how much fuel something gives you, the way a litre measures petrol.',
+        ],
+      },
+      {
+        h: 'The three states',
+        list: [
+          'Maintenance — you eat about as much as you use, and weight sits still.',
+          'Surplus — you eat a bit more, and your body has spare material to build with.',
+          'Deficit — you eat less than you use, and weight comes down over time.',
+        ],
+      },
+      {
+        h: 'Why it matters for lifting',
+        p: [
+          'Building muscle is construction work, and construction needs materials. In a surplus your body has them spare. In a deficit it is being asked to build an extension while the deliveries dry up — possible, but slow, and it needs everything else to be right.',
+          'This is the part most people are never told: if you have been eating carefully for a long time to get lean, the thing most likely to be holding your training back is not the programme. It is that there is nothing spare to build from.',
+        ],
+      },
+      {
+        h: 'Why this app sets you no number',
+        p: [
+          'Calorie targets from a formula are estimates with a wide margin, and the machines at the gym overstate what you burn by twenty to thirty per cent. A number that precise-looking and that wrong invites you to trust it over your own body.',
+          'And the honest reason: your diet already works. A training app has no business reaching into something that is not broken, so this one does not track food, does not ask your weight beyond the one figure that scales your starting loads, and never scores a meal.',
+        ],
+      },
+      {
+        h: 'What to watch instead',
+        p: [
+          'Direction over precision. Over a month: are the weights on the machines going up, are you recovering between sessions, are you sleeping, do sets feel powerful rather than flat? Those tell you more about whether you are fuelled than any daily total.',
+          'The Progress screen already tracks the first one for you, which is the point of it.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'eating-to-build',
+    topic: 'nutrition',
+    title: 'Eating to build, after a diet',
+    oneLiner: 'Getting lean and building muscle ask for opposite things. This is how to change gear.',
+    body: [
+      {
+        p: [
+          'If you arrived here lean from careful eating, you have already done the hard part — and you have also spent a long time practising a skill that is the opposite of the one you now need.',
+          'Losing fat rewards eating less. Building muscle rewards eating enough. Those are different jobs, and the habits that got you the first one will quietly limit the second.',
+        ],
+      },
+      {
+        h: 'What actually happens if you keep dieting',
+        list: [
+          'Sessions feel flat, and the last reps — the ones that drive the adaptation — go missing',
+          'The weights stop climbing, and it reads as a programme problem when it is a fuel problem',
+          'Recovery drags, so you turn up to each session slightly behind the last one',
+          'Sleep and mood take a knock, which nobody attributes to food',
+        ],
+      },
+      {
+        h: 'Recomposition, and who gets it',
+        p: [
+          'Gaining muscle while losing fat at the same time is real. It goes best in people new to lifting, people coming back after a break, and people carrying more fat to draw on. If this is your first structured programme, the first of those is squarely you.',
+          'It still runs slower than doing either job on its own, and it still needs the protein and the sleep. But it does mean you do not have to choose a side on day one.',
+        ],
+      },
+      {
+        h: 'A gentler way to think about it',
+        p: [
+          'You do not need to "bulk". That word carries a lot of baggage and mostly describes something you have not asked for. Eating enough is not the same as eating a lot.',
+          'In practice it usually means adding protein at breakfast, not skipping meals on busy days, and eating properly on the days you lift. That is a smaller change than it sounds, and it is usually the one that unlocks the next three months of progress.',
+        ],
+      },
+      {
+        h: 'If food is a fraught subject',
+        p: [
+          'For some people, thinking carefully about eating is genuinely difficult, and advice like this can push in an unhelpful direction. If that is you, none of these pages is worth your peace of mind — talk to a doctor or a registered dietitian, who can help in a way an app cannot.',
+          'This app will never weigh you, score a meal, or tell you a number to hit. That is deliberate.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'supplements',
+    topic: 'nutrition',
+    title: 'Supplements: the short list',
+    oneLiner: 'One is worth the money, one is convenience, and the rest of the shop is noise.',
+    body: [
+      {
+        p: [
+          'The supplement industry is enormous, and the evidence base is tiny. Almost everything in a shop is either a food you could have eaten, or nothing at all. Here is the short version, in order of how much it is worth.',
+        ],
+      },
+      {
+        h: 'Creatine — genuinely worth it',
+        p: [
+          'The most studied supplement in sport, and one of very few with a real, repeatable effect. It helps your muscles produce energy for short hard efforts, which for you means another rep or two on a set that mattered.',
+          'Creatine monohydrate is the form everything was tested on; the fancier versions cost more and do no more. Three to five grams a day, any time of day, with no loading phase needed. It is cheap.',
+          'Two things people worry about: it is not a steroid, it is a substance already in red meat and in your muscles. And the early weight gain is water drawn into the muscle, not fat.',
+        ],
+      },
+      {
+        h: 'Protein powder — food in a tin',
+        p: [
+          'Whey is convenient and quickly absorbed, and it does nothing a chicken breast or a pot of Greek yoghurt does not also do. It is useful precisely when real food is inconvenient, which for most people is breakfast and straight after work.',
+          'Buy it if it makes hitting your protein easier. Skip it if it does not. There is no version of this where the powder is doing something the food cannot.',
+        ],
+      },
+      {
+        h: 'Caffeine — real, and you already have it',
+        p: [
+          'Reliably improves how hard training feels and how much you get through. A coffee an hour before is the whole protocol. Worth knowing that it lingers far longer than it feels like — late-afternoon coffee costs sleep, and sleep is doing more for your progress than the coffee was.',
+        ],
+      },
+      {
+        h: 'Not worth your money',
+        list: [
+          'Fat burners — a stimulant and a marketing budget',
+          'BCAAs — a partial protein, sold at a premium, pointless if you eat enough protein',
+          'Detox teas and cleanses — your liver and kidneys already do this, and some are simply laxatives',
+          'Testosterone boosters — do not raise testosterone',
+          'Anything promising to target fat from one area — see the myths page',
+        ],
+      },
+      {
+        h: 'Before you buy anything',
+        p: [
+          'Supplements are barely regulated compared with medicine, and they can interact with prescriptions. If you take any medication or are pregnant, ask a pharmacist or doctor first — this app is not medical advice and cannot know your situation.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'food-myths',
+    topic: 'nutrition',
+    title: 'Myths worth dropping',
+    oneLiner: 'Nine things that sound sensible, are widely repeated, and are not true.',
+    body: [
+      {
+        p: [
+          'Each of these costs someone real effort or real anxiety, which is the only reason they are worth naming.',
+        ],
+      },
+      {
+        h: '"You must eat protein within an hour of training"',
+        p: [
+          'The anabolic window. Your muscles stay sensitive to protein for well over a day after a session — the window is closer to twenty-four hours than to sixty minutes. What you eat across the whole day is what counts. Sprinting home from the gym to a shaker achieves nothing.',
+        ],
+      },
+      {
+        h: '"Carbs at night make you gain fat"',
+        p: [
+          'Your body does not read a clock. Total food over weeks decides the direction; the hour it arrived does not. Carbs in the evening actually help some people sleep.',
+        ],
+      },
+      {
+        h: '"Lifting weights will make me bulky"',
+        p: [
+          'Building visible muscle is slow, deliberate and difficult, which is the entire reason this programme runs twelve weeks and progresses in small steps. Nobody has ever woken up accidentally huge. The look people mean by "toned" is muscle — you cannot get it without building some.',
+        ],
+      },
+      {
+        h: '"Sit-ups will flatten my stomach"',
+        p: [
+          'Spot reduction is not a thing. You cannot choose where fat leaves from any more than you can choose where it arrived. Ab work builds the muscle underneath; whether it shows is decided by overall body fat — and that is the half you already have handled. The muscle is the half worth working on.',
+        ],
+      },
+      {
+        h: '"Eating fat makes you fat"',
+        p: [
+          'A coincidence of vocabulary, nothing more. Dietary fat is a nutrient you need for hormones and for absorbing several vitamins.',
+        ],
+      },
+      {
+        h: '"Sweating means it is working"',
+        p: [
+          'Sweat is temperature control. A hot room produces more of it than a hard session in a cool one. It measures nothing about the training.',
+        ],
+      },
+      {
+        h: '"Sugar is toxic" / "carbs are addictive"',
+        p: [
+          'Sugar is a carbohydrate with little else attached, which is a decent reason to keep most of your food more interesting than that. It is not poison, and a dessert is not a moral failure. And addictive is the wrong word — wanting a biscuit is not the same as needing one.',
+        ],
+      },
+      {
+        h: '"You need six small meals to stoke your metabolism"',
+        p: [
+          'Digesting food burns a little energy, in proportion to how much you eat rather than how many sittings you split it into. Eat on a schedule that suits your day. The only nuance is protein, which is worth spreading out — for building material, not for metabolism.',
+        ],
+      },
+      {
+        h: '"Detox teas / juice cleanses"',
+        p: [
+          'Your liver and kidneys detoxify you continuously and for free. Several of these products work by being laxatives, which is not the same as being healthy.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'eating-around-training',
+    topic: 'nutrition',
+    title: 'Eating around a session',
+    oneLiner: 'What is genuinely worth doing on a gym day, which is less than you have been told.',
+    body: [
+      {
+        p: [
+          'Meal timing is where most nutrition advice piles up, and it is the part that matters least. It is worth about a few per cent, and only once the big things — enough protein, enough food, enough sleep — are already in place.',
+          'That said, a few practical points genuinely help, mostly by making the session feel better.',
+        ],
+      },
+      {
+        h: 'Before',
+        p: [
+          'Something with carbohydrate an hour or two beforehand makes hard sets feel powerful rather than flat. A banana, some toast, a normal lunch — this is not a protocol.',
+          'Training completely empty is fine if you prefer it and the session still feels strong. It is not virtuous, and if your last two reps keep disappearing, eat something.',
+          'Avoid a large, fatty or very fibre-heavy meal in the hour before lifting, for the simple reason that it sits heavily through a set of squats.',
+        ],
+      },
+      {
+        h: 'During',
+        p: [
+          'Water. That is the entire list for a session of this length. Sports drinks are designed for endurance events lasting well over an hour, and are just sugar in your gym hour.',
+        ],
+      },
+      {
+        h: 'After',
+        p: [
+          'Eat a normal meal with protein in it, whenever your day makes that convenient. That is the whole of the after-training advice, and there is no rush — see the anabolic window on the myths page.',
+          'You walk home, which is a better cool-down than anything you would do in the gym.',
+        ],
+      },
+      {
+        h: 'Water and fibre, briefly',
+        p: [
+          'Being properly hydrated makes training feel easier, and the honest guidance is unexciting: drink when thirsty, have a bottle with you, and check that your urine is pale rather than dark. Fixed litre targets are made up.',
+          'Fibre is the one most people are genuinely short of. Vegetables, fruit, beans, oats, wholegrains. It keeps digestion comfortable and keeps you full for longer, which quietly makes eating well easier.',
+        ],
+      },
+      {
+        h: 'The order of what matters',
+        list: [
+          'Enough total food, and enough protein across the day',
+          'Sleep — nothing on this page competes with it',
+          'Training hard and progressing the load, which the app handles',
+          'Roughly sensible food quality and enough fibre',
+          'Meal timing — this page, and last for a reason',
         ],
       },
     ],

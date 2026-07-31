@@ -12,7 +12,7 @@
 // turn a paragraph into a minefield. Those are marked `auto: false` and get
 // placed by hand, once, where she first meets them.
 
-export type TermGroup = 'session' | 'programme' | 'cardio' | 'exercise';
+export type TermGroup = 'session' | 'programme' | 'cardio' | 'exercise' | 'nutrition';
 
 export interface Term {
   id: string;
@@ -34,6 +34,7 @@ export const GROUP_LABELS: Record<TermGroup, string> = {
   programme: 'About the programme',
   cardio: 'On the cardio screen',
   exercise: 'On the exercise pages',
+  nutrition: 'About food and fuel',
 };
 
 export const TERMS: Term[] = [
@@ -371,6 +372,165 @@ export const TERMS: Term[] = [
       'The order to learn a movement in, from the machine version up to the free-weight one. You move up a rung when you have earned it, not on a date.',
     group: 'exercise',
     more: 'machines-vs-free-weights',
+  },
+
+  // -------------------------------------------------------------- nutrition
+  // Definitions only. This app sets no calorie target, no weight target and no
+  // body-composition goal (SPEC section 6), so every one of these explains what
+  // a word means rather than telling her what her number should be.
+  {
+    id: 'protein',
+    label: 'Protein',
+    short:
+      'The nutrient your body rebuilds muscle from. Meat, fish, eggs, dairy, beans, lentils, tofu. Of everything you eat, this is the one that matters most for training.',
+    group: 'nutrition',
+    more: 'protein',
+    auto: true,
+  },
+  {
+    id: 'complete-protein',
+    label: 'Complete protein',
+    short:
+      'A protein source containing all the building blocks your body cannot make itself. Animal foods and soy are complete; most single plant foods are not, which is why plant eaters mix sources.',
+    group: 'nutrition',
+    more: 'protein',
+    auto: true,
+  },
+  {
+    id: 'carbohydrate',
+    label: 'Carbohydrate',
+    short:
+      'Your body’s preferred fuel for hard work. Bread, rice, pasta, potatoes, oats, fruit. Carbs are what make a heavy set feel powerful rather than flat.',
+    group: 'nutrition',
+    more: 'macros',
+    aliases: ['carbohydrates', 'carbs'],
+    auto: true,
+  },
+  {
+    id: 'dietary-fat',
+    label: 'Dietary fat',
+    short:
+      'Fat you eat — oil, butter, nuts, avocado, oily fish. Not the same thing as body fat, and necessary: it runs your hormones and carries several vitamins.',
+    group: 'nutrition',
+    more: 'macros',
+  },
+  {
+    id: 'macronutrient',
+    label: 'Macronutrient',
+    short:
+      'The three things food is mostly made of: protein, carbohydrate and fat. "Macros" is just shorthand for those three.',
+    group: 'nutrition',
+    more: 'macros',
+    aliases: ['macronutrients', 'macros'],
+    auto: true,
+  },
+  {
+    id: 'micronutrient',
+    label: 'Micronutrient',
+    short:
+      'Vitamins and minerals. Needed in tiny amounts, and you get them from eating a reasonable variety of food rather than from any one product.',
+    group: 'nutrition',
+    aliases: ['micronutrients'],
+    auto: true,
+  },
+  {
+    id: 'calorie',
+    label: 'Calorie',
+    short:
+      'A unit of energy in food. Not a score and not a moral quantity — it measures how much fuel something gives you, nothing else.',
+    group: 'nutrition',
+    more: 'energy-balance',
+    aliases: ['calories', 'kcal'],
+    auto: true,
+  },
+  {
+    id: 'maintenance',
+    label: 'Maintenance',
+    short:
+      'The amount of food that keeps your weight roughly steady. Eat consistently above it and weight rises; below it and weight falls.',
+    group: 'nutrition',
+    more: 'energy-balance',
+  },
+  {
+    id: 'surplus',
+    label: 'Surplus',
+    short:
+      'Eating a bit more than maintenance. Gives your body spare material to build with, which is why muscle is easier to gain in one.',
+    group: 'nutrition',
+    more: 'energy-balance',
+  },
+  {
+    id: 'deficit',
+    label: 'Deficit',
+    short:
+      'Eating less than maintenance, so weight comes down. It is how you lose fat, and it is also the hardest state in which to build muscle.',
+    group: 'nutrition',
+    more: 'energy-balance',
+  },
+  {
+    id: 'recomposition',
+    label: 'Recomposition',
+    short:
+      'Gaining muscle and losing fat at the same time. Slower than doing either alone, but it genuinely happens in people new to lifting.',
+    group: 'nutrition',
+    more: 'eating-to-build',
+    aliases: ['recomp', 'body recomposition'],
+    auto: true,
+  },
+  {
+    id: 'fibre',
+    label: 'Fibre',
+    short:
+      'The part of plant food you do not digest. It keeps you regular and keeps you full for longer. Most people eat well under what they need.',
+    group: 'nutrition',
+    aliases: ['fiber'],
+    auto: true,
+  },
+  {
+    id: 'satiety',
+    label: 'Satiety',
+    short:
+      'How full a food leaves you, and for how long. Protein and fibre are filling, which is worth knowing in both directions — it is also why eating enough can be hard when your food is very lean.',
+    group: 'nutrition',
+    auto: true,
+  },
+  {
+    id: 'neat',
+    label: 'NEAT',
+    short:
+      'Everything you burn that is not exercise — walking, standing, fidgeting, stairs. For most people it dwarfs the gym, which is why your walk matters so much.',
+    group: 'nutrition',
+    more: 'why-the-walk-counts',
+    aliases: ['non-exercise activity'],
+    auto: true,
+  },
+  {
+    id: 'creatine',
+    label: 'Creatine',
+    short:
+      'A compound your muscles use for short, hard efforts. The single most studied supplement in sport, and one of very few with a real, repeatable effect.',
+    group: 'nutrition',
+    more: 'supplements',
+    auto: true,
+  },
+  {
+    id: 'whey',
+    label: 'Whey',
+    short:
+      'A protein from milk, sold as a powder. Convenient and quickly absorbed, but nothing a chicken breast or a pot of yoghurt does not also do.',
+    group: 'nutrition',
+    more: 'supplements',
+    aliases: ['whey protein'],
+    auto: true,
+  },
+  {
+    id: 'anabolic-window',
+    label: 'Anabolic window',
+    short:
+      'The claim that you must eat protein within about an hour of training or waste the session. It is not true — what matters is how much you eat across the whole day.',
+    group: 'nutrition',
+    more: 'food-myths',
+    auto: true,
   },
 ];
 

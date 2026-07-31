@@ -5,8 +5,9 @@ import { ARTICLES } from '@/lib/train/learn';
 export const metadata = { title: 'Learn · Baseline' };
 
 export default function LearnPage() {
-  const always = ARTICLES.filter((a) => a.unlocksWeek === undefined);
+  const always = ARTICLES.filter((a) => a.unlocksWeek === undefined && a.topic === undefined);
   const gated = ARTICLES.filter((a) => a.unlocksWeek !== undefined).sort((a, b) => a.unlocksWeek! - b.unlocksWeek!);
+  const nutrition = ARTICLES.filter((a) => a.topic === 'nutrition');
 
   return (
     <div className="space-y-5">
@@ -28,6 +29,29 @@ export default function LearnPage() {
       <section>
         <ul className="space-y-2">
           {always.filter((a) => a.slug !== 'glossary').map((a) => (
+            <li key={a.slug}>
+              <Link href={`/learn/${a.slug}`} className="card flex items-center justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="font-medium block leading-tight">{a.title}</span>
+                  <span className="muted text-sm">{a.oneLiner}</span>
+                </span>
+                <ChevronRight size={18} className="shrink-0 muted" aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="card-title mb-1">Food and fuel</h2>
+        <p className="muted text-sm mb-2">
+          Background reading, not instructions. The programme sets no calorie target and no weight
+          goal, and nothing here asks you to weigh or log anything — these pages are here so the
+          vocabulary stops being mysterious. If thinking carefully about food is difficult for you,
+          they are optional, and skipping them costs you nothing.
+        </p>
+        <ul className="space-y-2">
+          {nutrition.map((a) => (
             <li key={a.slug}>
               <Link href={`/learn/${a.slug}`} className="card flex items-center justify-between gap-3">
                 <span className="min-w-0">
