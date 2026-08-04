@@ -40,7 +40,7 @@ how to set a machine up or how hard a set is meant to feel.
 
 ## Stack
 
-Next.js 14 App Router · TypeScript · Tailwind · Recharts. No database, no
+Next.js 16 App Router · TypeScript · Tailwind · Recharts. No database, no
 accounts, no server-side state.
 
 ## Setup
@@ -121,9 +121,13 @@ Two outputs from one entry, switched by a `__PREVIEW__` define:
   the reflex when a page looks stuck, in exactly the basement this is for.
   Cache-first rather than the usual network-first on purpose: a phone associated
   with an access point that has no route out hangs rather than failing fast.
-  The staleness that buys is bounded at one launch — the cache is keyed on a
-  hash of the bundle, `updateViaCache: 'none'` stops the worker itself being
-  served stale, and `activate` purges every older cache.
+  Staleness is bounded at one launch by the background revalidation: the worker
+  fetches the document after serving the cached copy, so the next launch gets
+  the new build. Measured, that is the mechanism that actually delivers.
+  The *other* mechanism previously claimed here does not — see known gap 6 in
+  SPEC.md. Chromium did not re-fetch `sw.js` across four reloads, so a changed
+  `CACHE` name never reaches the phone on its own and `activate` never runs its
+  purge. Content still updates; the worker's own logic does not.
 - **Videos are linked, never embedded.** The app sets `X-Frame-Options: DENY`
   and grants no device permissions. Links open in a new tab. All 41 exercises
   carry a curated tutorial, each id resolved through YouTube's oembed endpoint
@@ -131,6 +135,14 @@ Two outputs from one entry, switched by a `__PREVIEW__` define:
   YouTube search fallback stays alongside regardless, because an upload can be
   pulled at any time and a dead link while she is standing at a machine is the
   failure worth designing out.
+- **The chart is loaded on demand.** recharts and its d3/lodash dependencies are
+  about 45% of the bundle, and one screen of seven draws a chart, so it sits
+  behind a dynamic import in `components/load-chart.tsx`. The bytes stay in the
+  single file — esbuild cannot split an IIFE bundle, and a separate chunk would
+  be a second request the offline cache would have to carry — but recharts is
+  off the startup path, and the inline script is synchronous, so that lands
+  directly on the first paint: 1000 ms to 640 ms on a 6x-throttled CPU. The
+  chart itself arrives sooner too, because everything downstream shifts earlier.
 - **Diagrams are drawn in-house.** `components/muscle-map.tsx` is plain SVG: no
   outbound request, works offline, renders identically everywhere.
 - **The font is self-hosted** at build time via `next/font`, so a page renders

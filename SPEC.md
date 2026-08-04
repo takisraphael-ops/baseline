@@ -389,7 +389,18 @@ it. The optional "how did that feel?" field is never scored or interpreted.
    available and would improve the machine-stack fallback most of all.
 4. **Weeks 13+ are not generated.** After week 12 the app tells her to re-test
    and run it again from the new numbers. Automatic regeneration is a later job.
-5. **VO2 norms cover ages 20–49 only.** Both sexes, from the Cooper Institute
+5. **The service worker script does not refresh itself.** Measured with a
+   request counter: Chromium did not re-fetch `sw.js` across four reloads, so a
+   new build's `CACHE` name never arrives and `activate` never purges. An
+   explicit `registration.update()` from the page *does* work — it re-fetched
+   and swapped the cache immediately — so the fix is to call it on a real
+   trigger (visibility change, or an interval) rather than only inside the
+   `load` handler, where it appears to be coalesced with the `register()` call's
+   own check. Impact is narrower than it sounds: new *content* still reaches the
+   phone one launch later through the worker's background revalidation, which is
+   what actually delivers builds today. What will not ship is a change to the
+   caching logic itself.
+6. **VO2 norms cover ages 20–49 only.** Both sexes, from the Cooper Institute
    bands that could be sourced and checked. An athlete of 50+ gets the estimate,
    the error band and the trend — everything the programme acts on — but no
    population rating, because nothing is shown that has not been verified.
