@@ -8,19 +8,12 @@ import Ignition from '@/components/ignition';
 import Onboarding from '@/components/onboarding';
 import Term from '@/components/term';
 import { getExercise } from '@/lib/train/exercises';
+import { displayName, finishedLine, greeting } from '@/lib/train/greeting';
 import { termIdInLabel } from '@/lib/train/glossary';
 import { blockForWeek, getSession, isDeloadWeek, nextSessionId, weekForSessionCount, TOTAL_WEEKS } from '@/lib/train/programme';
 import { load } from '@/lib/train/store';
 import { weeklyWalkMinutes } from '@/lib/train/volume';
 import type { TrainState } from '@/lib/train/types';
-
-/** Varies with where she is in the programme, so it never reads like a form letter. */
-function greeting(name: string, sessionsDone: number): string {
-  if (sessionsDone === 0) return `Ready when you are, ${name}`;
-  if (sessionsDone === 1) return 'Second one — nice';
-  if (sessionsDone < 8) return `Next up, ${name}`;
-  return 'Next up';
-}
 
 export default function Today() {
   const [state, setState] = useState<TrainState | null>(null);
@@ -41,6 +34,7 @@ export default function Today() {
   const walkMin = weeklyWalkMinutes(state.profile.walkMinutesEachWay);
   const finished = done >= TOTAL_WEEKS * 4;
   const mainLift = session.slots.find((s) => s.role === 'main');
+  const who = displayName(state.profile);
 
   return (
     <div className="space-y-4">
@@ -51,7 +45,7 @@ export default function Today() {
           {deload && <Term id="deload" bare className="chip chip-prime chip-info">Deload</Term>}
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">
-          {finished ? `Twelve weeks done, ${state.profile.name}` : greeting(state.profile.name, done)}
+          {finished ? finishedLine(who) : greeting(who, done)}
         </h1>
       </header>
 

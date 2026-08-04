@@ -10,6 +10,7 @@ import { SESSIONS, SESSION_ORDER, blockForWeek, intervalsForWeek, isDeloadWeek, 
 import { INCREMENT_CEILING, TEMPO_SEC, effortOf, nextTarget, progressed, stallCount, topKg, totalReps } from '../lib/train/progression';
 import { classifyHr, karvonen, maxHrTanaka, zones } from '../lib/train/zones';
 import { classifyVo2, cooperVo2, isMeaningfulChange, rockportVo2 } from '../lib/train/vo2';
+import { displayName, finishedLine, greeting, nothingLoggedLine } from '../lib/train/greeting';
 import { plannedWeeklyVolume, weeklyWalkMinutes } from '../lib/train/volume';
 import { MAX_INDEX, QUESTIONS, cautions, startingLoad, strengthFactor, strengthIndex } from '../lib/train/quiz';
 import { EXERCISES, demoUrl, hasCuratedVideo } from '../lib/train/exercises';
@@ -541,6 +542,54 @@ console.log('\n--- Effort control matches the engine ---');
   expect('The "all out" button really does hold the load', held.kg, 60);
 }
 
+console.log('\n--- How the app addresses the athlete ---');
+// The profile was seeded with one client's name, so the public URL greeted
+// every stranger who opened it as her. The fallback for a blank name was the
+// literal word 'you', dropped into sentences written for a name — "Ready when
+// you are, you", "Nothing logged yet, you." Both are covered here because
+// neither shows up unless you actually complete onboarding as someone new.
+{
+  expect('greeting, first session', greeting('Sarah', 0), 'Ready when you are, Sarah');
+  expect('greeting, settled in', greeting('Sarah', 4), 'Next up, Sarah');
+  expect('greeting, second session drops the name', greeting('Sarah', 1), 'Second one — nice');
+  expect('greeting, long-timer drops the name', greeting('Sarah', 20), 'Next up');
+  expect('finished line', finishedLine('Sarah'), 'Twelve weeks done, Sarah');
+  expect('nothing-logged line', nothingLoggedLine('Sarah'), 'Nothing logged yet, Sarah.');
+
+  // No name: every line must still be a sentence.
+  expect('greeting with no name', greeting(null, 0), 'Ready when you are');
+  expect('greeting with no name, later', greeting(null, 4), 'Next up');
+  expect('finished line with no name', finishedLine(null), 'Twelve weeks done');
+  expect('nothing-logged with no name', nothingLoggedLine(null), 'Nothing logged yet.');
+  // A dangling comma is the tell that a name was interpolated into nothing.
+  for (const line of [greeting(null, 0), greeting(null, 1), greeting(null, 4), greeting(null, 20), finishedLine(null), nothingLoggedLine(null)]) {
+    expect(`"${line}" has no dangling comma`, /,\s*$|,\s*\./.test(line), false);
+    expect(`"${line}" does not address her as "you"`, /\byou\b\s*[.,]?\s*$/.test(line), false);
+  }
+
+  // Whitespace is absence, not a name.
+  expect('blank name is absent', displayName({ name: '' }), null);
+  expect('whitespace name is absent', displayName({ name: '   ' }), null);
+  expect('missing profile is absent', displayName(null), null);
+  expect('a real name survives, trimmed', displayName({ name: '  Sarah ' }), 'Sarah');
+
+  const ob = readFileSync(new URL('../components/onboarding.tsx', import.meta.url), 'utf8');
+  expect('onboarding starts with an empty name', ob.includes("useState('')"), true);
+  // The gate is what makes the empty case rare rather than routine.
+  expect('the name gates the step', ob.includes('disabled={!name.trim() || !age || !weightKg}'), true);
+  expect('onboarding stores the name as typed', ob.includes('name: name.trim(),'), true);
+  expect('onboarding substitutes no placeholder word', /name:\s*name\.trim\(\)\s*\|\|/.test(ob), false);
+
+  const settings = readFileSync(new URL('../app/settings/page.tsx', import.meta.url), 'utf8');
+  expect('settings writes no placeholder name', /name:\s*e\.target\.value\.trim\(\)\s*\|\|/.test(settings), false);
+
+  // No source file may carry a seeded personal name again. demo/seed.ts is the
+  // one place a name is legitimately fixed, and it uses 'Sample'.
+  for (const f of ['../components/onboarding.tsx', '../app/page.tsx', '../app/progress/page.tsx', '../app/settings/page.tsx', '../demo/seed.ts', '../demo/build.mjs', '../app/layout.tsx']) {
+    expect(`${f.replace('../', '')} carries no seeded client name`, /\bDiva\b/i.test(readFileSync(new URL(f, import.meta.url), 'utf8')), false);
+  }
+}
+
 console.log('\n--- Splash markup ---');
 // The launch animation is duplicated: JSX in app/layout.tsx for the Next build,
 // a string in demo/build.mjs so the hosted single file can paint it before the
@@ -645,6 +694,8 @@ console.log('\n--- Offline cache ---');
   expect('the workflow deploys sw.js', wf.includes('cp demo/dist/sw.js _site/sw.js'), true);
   expect('the workflow fails if sw.js is empty', wf.includes('test -s _site/sw.js'), true);
   expect('the workflow checks the page registers it', wf.includes(`grep -q "register('./sw.js'" _site/index.html`), true);
+  // Guards the shipped bytes, not just the source the fixtures can see.
+  expect('the workflow rejects a seeded client name', wf.includes("! grep -qi 'diva' _site/index.html"), true);
 }
 
 console.log('\n--- Demo links ---');
