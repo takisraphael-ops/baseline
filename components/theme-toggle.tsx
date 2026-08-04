@@ -7,9 +7,9 @@
 // actually want. With a plain toggle the only way back to automatic is clearing
 // storage.
 
-import { useEffect, useState } from 'react';
 import { Monitor, Moon, Sun } from 'lucide-react';
-import { applyTheme, readTheme, saveTheme } from '@/lib/train/theme';
+import { applyTheme, saveTheme } from '@/lib/train/theme';
+import { useThemeChoice } from '@/lib/train/use-store';
 import type { ThemeChoice } from '@/lib/train/theme';
 
 const OPTIONS: { id: ThemeChoice; label: string; Icon: typeof Sun }[] = [
@@ -19,15 +19,16 @@ const OPTIONS: { id: ThemeChoice; label: string; Icon: typeof Sun }[] = [
 ];
 
 export default function ThemeToggle() {
-  // Starts null so the server render and the first client render agree. The
-  // real value arrives in the effect below; the boot script has already applied
-  // it to <html>, so nothing flashes while this catches up.
-  const [choice, setChoice] = useState<ThemeChoice | null>(null);
-
-  useEffect(() => setChoice(readTheme()), []);
+  // Null during server render and hydration, so those two agree; the boot
+  // script has already put the saved choice on <html>, so nothing flashes while
+  // this catches up. Subscribed rather than loaded once, which is also what
+  // lets a change in another tab move the selection here.
+  const choice = useThemeChoice();
 
   const pick = (next: ThemeChoice) => {
-    setChoice(next);
+    // <html> is outside React's tree, so it is updated directly. saveTheme
+    // notifies the store, which re-renders this control — no local copy of the
+    // choice to keep in step.
     applyTheme(next);
     saveTheme(next);
   };

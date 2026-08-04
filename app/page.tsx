@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Dumbbell, Footprints, HeartPulse, Sparkles } from 'lucide-react';
 import Glossed from '@/components/glossed';
@@ -11,19 +10,14 @@ import { getExercise } from '@/lib/train/exercises';
 import { displayName, finishedLine, greeting } from '@/lib/train/greeting';
 import { termIdInLabel } from '@/lib/train/glossary';
 import { blockForWeek, getSession, isDeloadWeek, nextSessionId, weekForSessionCount, TOTAL_WEEKS } from '@/lib/train/programme';
-import { load } from '@/lib/train/store';
+import { useTrainState } from '@/lib/train/use-store';
 import { weeklyWalkMinutes } from '@/lib/train/volume';
-import type { TrainState } from '@/lib/train/types';
 
 export default function Today() {
-  const [state, setState] = useState<TrainState | null>(null);
-
-  useEffect(() => {
-    setState(load());
-  }, []);
+  const state = useTrainState();
 
   if (!state) return <p className="muted py-8">Loading…</p>;
-  if (!state.profile) return <Onboarding onDone={() => setState(load())} />;
+  if (!state.profile) return <Onboarding />;
 
   const done = state.logs.length;
   const week = weekForSessionCount(done);

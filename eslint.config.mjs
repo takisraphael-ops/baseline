@@ -19,28 +19,6 @@ const config = [
     ignores: ['.next/**', 'demo/dist/**', 'node_modules/**', 'out/**'],
   },
   ...next,
-  {
-    rules: {
-      // Off, and it should not stay off forever.
-      //
-      // Every page loads its state with `useEffect(() => setState(load()), [])`
-      // — ten sites. That is not carelessness: the store is localStorage, the
-      // server render and the first client render have to agree, and reading
-      // storage during render would make them disagree and hydrate wrong. The
-      // null-then-load shape is what keeps the first paint honest.
-      //
-      // The rule is still pointing at something true. The modern answer for an
-      // external store is useSyncExternalStore, which would remove the extra
-      // render — but it needs a stable snapshot, and lib/train/store.ts returns
-      // a fresh object from every load(), so a naive swap loops forever. Doing
-      // it properly means caching the snapshot in the store and invalidating on
-      // write: a change to the persistence layer every screen depends on, and
-      // not something to slip into a dependency bump.
-      //
-      // Tracked in SPEC.md as a known gap.
-      'react-hooks/set-state-in-effect': 'off',
-    },
-  },
 ];
 
 export default config;

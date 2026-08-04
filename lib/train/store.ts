@@ -42,6 +42,74 @@ export function isEphemeral(): boolean {
   return storageBlocked;
 }
 
+// ---------------------------------------------------------------- subscription
+//
+// localStorage is an external store, and React has a hook for exactly that.
+// Every screen used to read it with `useEffect(() => setState(load()), [])`,
+// which renders once with nothing, then again with the data — and needs a
+// manual `setState(load())` after every write to stay in step. Miss one and the
+// screen shows stale numbers.
+//
+// useSyncExternalStore needs a snapshot that is referentially STABLE between
+// renders, and `load()` parses fresh JSON into a new object every call. Handed
+// straight to the hook it would look like a new value every time and loop for
+// ever. So the parse is cached here and thrown away on write. That cache is the
+// whole reason this could not be a two-line change.
+let snapshot: TrainState | null = null;
+const listeners = new Set<() => void>();
+
+function onStorage(e: StorageEvent): void {
+  // key === null is a clear() from another tab.
+  if (e.key === null || e.key === KEY) invalidate();
+}
+
+/** Drop the cached parse and wake every subscriber. */
+function invalidate(): void {
+  snapshot = null;
+  for (const l of [...listeners]) l();
+}
+
+export function subscribe(onChange: () => void): () => void {
+  listeners.add(onChange);
+  // A second tab writing must not leave this one showing numbers that are no
+  // longer true. Attached only while something is listening.
+  if (typeof window !== 'undefined' && listeners.size === 1) {
+    window.addEventListener('storage', onStorage);
+  }
+  return () => {
+    listeners.delete(onChange);
+    if (typeof window !== 'undefined' && listeners.size === 0) {
+      window.removeEventListener('storage', onStorage);
+    }
+  };
+}
+
+/**
+ * The current state, as one stable object until something writes.
+ *
+ * Must never return a fresh object for unchanged data — that is the contract
+ * useSyncExternalStore relies on, and breaking it is an infinite render loop
+ * rather than a subtle bug.
+ */
+export function getSnapshot(): TrainState | null {
+  if (snapshot === null) snapshot = load();
+  return snapshot;
+}
+
+/**
+ * Null during server render and hydration, which is what every screen already
+ * treats as "not known yet" and shows its Loading line for. Returning EMPTY
+ * instead would prerender the onboarding quiz and then swap it for the real app
+ * — a flash of someone else's first-run screen on every load.
+ *
+ * The shipped single-file build never calls this: it mounts with createRoot and
+ * no hydration, so getSnapshot runs on the first render and real data is on
+ * screen a render earlier than it used to be.
+ */
+export function getServerSnapshot(): TrainState | null {
+  return null;
+}
+
 export function load(): TrainState {
   const store = ls();
   try {
@@ -66,14 +134,22 @@ export function save(state: TrainState): void {
   const json = JSON.stringify(state);
   memory = json;
   const store = ls();
-  if (!store) return;
-  try {
-    store.setItem(KEY, json);
-  } catch {
-    // Quota exceeded mid-session. The in-memory copy above still holds, so the
-    // session survives; throwing here would lose it.
-    storageBlocked = true;
+  if (store) {
+    try {
+      store.setItem(KEY, json);
+    } catch {
+      // Quota exceeded mid-session. The in-memory copy above still holds, so
+      // the session survives; throwing here would lose it.
+      storageBlocked = true;
+    }
   }
+  // Unconditional, and deliberately after every branch above. Every write in
+  // the app funnels through here, so this single call is what keeps subscribed
+  // screens current — and the two branches that do NOT reach localStorage are
+  // the ones that need it most. When storage is blocked, `memory` is the only
+  // copy there is; an early return here would leave a private-browsing session
+  // logging sets that never appear on screen.
+  invalidate();
 }
 
 export function saveProfile(profile: Profile): TrainState {
@@ -182,6 +258,9 @@ export function clearAll(): TrainState {
       // Nothing to do — the in-memory copy is already gone.
     }
   }
+  // The other write path. Without this, "Delete all data" empties storage and
+  // leaves every screen rendering the history it just deleted.
+  invalidate();
   return EMPTY;
 }
 

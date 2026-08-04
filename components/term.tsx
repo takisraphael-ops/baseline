@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { BookOpen, X } from 'lucide-react';
 import { getTerm } from '@/lib/train/glossary';
+import { useHydrated } from '@/lib/train/use-store';
 
 // Tap any piece of gym vocabulary and get the plain-English version, without
 // leaving the screen you are on.
@@ -35,13 +36,11 @@ export default function Term({
   bare?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  // Portals need a DOM to target, so nothing is rendered until after mount.
-  const [mounted, setMounted] = useState(false);
+  // Portals need a DOM to target, so nothing is rendered until there is one.
+  const mounted = useHydrated();
   const term = getTerm(id);
   const sheetRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;

@@ -28,7 +28,11 @@ const PREVIEW = ['leg-press', 'hip-thrust-machine', 'lat-pulldown', 'chest-press
 
 type Stage = 'welcome' | 'parq' | 'numbers' | 'quiz' | 'result';
 
-export default function Onboarding({ onDone }: { onDone: () => void }) {
+// No onDone callback any more. Saving the profile notifies the store, and the
+// screen that renders this is subscribed to it — so it swaps itself out for the
+// app the moment the write lands. The callback existed only to tell the parent
+// to go and re-read what had just been written.
+export default function Onboarding() {
   const [stage, setStage] = useState<Stage>('welcome');
   const [parq, setParq] = useState<boolean[]>(Array(PARQ.length).fill(false));
   // Empty, and required below. This was seeded with one client's name, which
@@ -82,7 +86,6 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
       strengthIndex: strengthIndex(full),
     };
     saveProfile(profile);
-    onDone();
   };
 
   // ------------------------------------------------------------------ welcome

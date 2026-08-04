@@ -47,6 +47,16 @@ even where a `videoUrl` exists — it is the escape hatch for a video that dies.
 because the hosted single file must paint it before any JS runs. A fixture
 compares the two class lists and fails if they drift.
 
+**`getSnapshot()` in `lib/train/store.ts` must return the same object until
+something writes.** Every screen subscribes through `useSyncExternalStore`, and
+that hook re-renders whenever the snapshot is a different reference. `load()`
+parses fresh JSON into a new object each call, so returning it directly is an
+infinite render loop rather than a slow screen. The cache is invalidated by
+`save()` and `clearAll()` and nowhere else — if you add a third write path,
+invalidate there too or every open screen keeps rendering data that is no longer
+true. Fixtures assert stability, both write paths, and that `store.ts` never
+imports React.
+
 **The inlined typeface is found by matching a filename Next emits, and that
 filename moves.** Webpack wrote `<hash>-s.p.woff2`; Turbopack in Next 16 writes
 `<hash>-s.p.<hash>.woff2`. The old `endsWith('-s.p.woff2')` in `demo/build.mjs`
