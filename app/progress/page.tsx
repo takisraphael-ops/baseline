@@ -1,9 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Ignition from '@/components/ignition';
+// Behind a dynamic import: recharts and its d3/lodash dependencies are ~45% of
+// the bundle, and this is the only chart in the app. Six of the seven screens
+// never need it.
+const LoadChart = lazy(() => import('@/components/load-chart'));
 import Term from '@/components/term';
 import { MUSCLE_LABELS, getExercise } from '@/lib/train/exercises';
 import { displayName, nothingLoggedLine } from '@/lib/train/greeting';
@@ -104,25 +107,11 @@ export default function ProgressPage() {
           <p className="text-sm muted">Log this one twice and the trend appears here.</p>
         ) : (
           <>
-            <div className="h-44 -ml-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chart}>
-                  <XAxis dataKey="n" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} stroke="var(--border)" />
-                  <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} stroke="var(--border)" width={34} />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--bg-elev)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 10,
-                      fontSize: 13,
-                    }}
-                    labelFormatter={(n) => `Session ${n}`}
-                    formatter={(v: number) => [`${v} kg`, 'Top set']}
-                  />
-                  <Line type="monotone" dataKey="kg" stroke="var(--accent)" strokeWidth={2.5} dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {/* The fallback holds the chart's exact height, so the cards
+                below it do not jump when the chart arrives. */}
+            <Suspense fallback={<div className="h-44 -ml-2" aria-hidden />}>
+              <LoadChart data={chart} />
+            </Suspense>
             {lastKg > firstKg && (
               <p className="text-sm mt-2" style={{ color: 'var(--success)' }}>
                 {firstKg > 0 ? (

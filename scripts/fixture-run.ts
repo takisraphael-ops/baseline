@@ -542,6 +542,38 @@ console.log('\n--- Effort control matches the engine ---');
   expect('The "all out" button really does hold the load', held.kg, 60);
 }
 
+console.log('\n--- Chart is loaded on demand ---');
+// recharts and its d3/lodash/react-smooth dependencies are ~350 kB of a 790 kB
+// bundle — 45% — and one screen of seven draws a chart. The bytes stay in the
+// single file (esbuild cannot split an IIFE bundle, and splitting would mean a
+// second request the offline cache would have to carry), but a dynamic import
+// keeps recharts OUT of the startup path. The inline script is synchronous, so
+// evaluating it at boot delays the first paint directly: measured at 1000 ms
+// against 640 ms on a 6x-throttled CPU.
+//
+// One eager `from 'recharts'` anywhere else puts it straight back.
+{
+  const files = [
+    'app/page.tsx', 'app/progress/page.tsx', 'app/cardio/page.tsx', 'app/plan/page.tsx',
+    'app/settings/page.tsx', 'app/library/page.tsx', 'app/learn/page.tsx',
+    'components/session-player.tsx', 'demo/main.tsx',
+  ];
+  for (const f of files) {
+    const src = readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
+    expect(`${f} does not import recharts eagerly`, /from 'recharts'/.test(src), false);
+  }
+  const chart = readFileSync(new URL('../components/load-chart.tsx', import.meta.url), 'utf8');
+  expect('load-chart.tsx is the one place recharts is imported', /from 'recharts'/.test(chart), true);
+
+  const prog = readFileSync(new URL('../app/progress/page.tsx', import.meta.url), 'utf8');
+  expect('progress loads the chart with lazy()', /lazy\(\(\) => import\('@\/components\/load-chart'\)\)/.test(prog), true);
+  expect('progress wraps it in Suspense', prog.includes('<Suspense'), true);
+  // The fallback has to reserve the chart's height, or every card below it
+  // jumps down when the chart arrives.
+  expect('the fallback reserves the chart height', /fallback=\{<div className="h-44 -ml-2"/.test(prog), true);
+  expect('the chart itself is that height', chart.includes('className="h-44 -ml-2"'), true);
+}
+
 console.log('\n--- Store subscription ---');
 // useSyncExternalStore demands a snapshot that is referentially stable between
 // renders. `load()` parses fresh JSON into a new object every call, so handing
