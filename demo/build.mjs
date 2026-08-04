@@ -85,8 +85,14 @@ const js = readFileSync(resolve(out, 'app.js'), 'utf8');
 let fontFace = '';
 try {
   const media = resolve(root, '.next/static/media');
-  // The `.p.` file is the preloaded latin subset.
-  const latin = readdirSync(media).find((f) => f.endsWith('-s.p.woff2'));
+  // The `-s.p.` marker is the preloaded latin subset. Matched by pattern
+  // rather than by suffix because the emitted filename is not stable across
+  // Next versions: webpack wrote `<hash>-s.p.woff2`, Turbopack in Next 16
+  // writes `<hash>-s.p.<hash>.woff2`. The old `endsWith('-s.p.woff2')` matched
+  // nothing after the upgrade, and the failure mode is a build that succeeds
+  // having quietly shipped system fonts — which is the whole reason
+  // --require-font exists. Keep this a pattern.
+  const latin = readdirSync(media).find((f) => /-s\.p\..*woff2$/.test(f));
   if (latin) {
     const b64 = readFileSync(resolve(media, latin)).toString('base64');
     fontFace = `@font-face{font-family:'InterInline';font-style:normal;font-weight:100 900;font-display:swap;src:url(data:font/woff2;base64,${b64}) format('woff2');}`;

@@ -381,7 +381,17 @@ it. The optional "how did that feel?" field is never scored or interpreted.
    available and would improve the machine-stack fallback most of all.
 4. **Weeks 13+ are not generated.** After week 12 the app tells her to re-test
    and run it again from the new numbers. Automatic regeneration is a later job.
-5. **VO2 norms cover ages 20–49 only.** Both sexes, from the Cooper Institute
+5. **State is loaded with `setState` inside an effect**, at ten sites, and the
+   `react-hooks/set-state-in-effect` rule is switched off in `eslint.config.mjs`
+   because of it. The pattern is deliberate — the store is localStorage, the
+   server render and the first client render have to agree, and reading storage
+   during render would hydrate wrong — but the rule is still pointing at a real
+   extra render. The modern answer is `useSyncExternalStore`, which needs a
+   stable snapshot; `load()` returns a fresh object every call, so it would loop.
+   Doing it properly means caching the snapshot in `lib/train/store.ts` and
+   invalidating on write: a change to the layer every screen depends on, worth
+   its own pass rather than being folded into something else.
+6. **VO2 norms cover ages 20–49 only.** Both sexes, from the Cooper Institute
    bands that could be sourced and checked. An athlete of 50+ gets the estimate,
    the error band and the trend — everything the programme acts on — but no
    population rating, because nothing is shown that has not been verified.

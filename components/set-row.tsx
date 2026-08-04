@@ -37,6 +37,45 @@ interface Props {
   onDone: () => void;
 }
 
+// Module scope, deliberately. Defined inside SetRow it was a new component type
+// on every render, so React unmounted and remounted the whole stepper each time
+// the row updated — which is every tap of + or −. The input lost its DOM
+// identity mid-interaction and every transition restarted. Nothing looked
+// broken, which is why it survived; the upgraded react-hooks plugin is what
+// found it.
+function Stepper({
+  value, label, disabled, onStep, onOpenWheel,
+}: {
+  value: number;
+  label: string;
+  disabled?: boolean;
+  onStep: (delta: number) => void;
+  onOpenWheel: () => void;
+}) {
+  return (
+    <div className="stepper" aria-label={label}>
+      <button type="button" className="stepper-btn" onClick={() => onStep(-1)} disabled={disabled} aria-label={`${label} down`}>
+        <Minus size={16} />
+      </button>
+      {/* readOnly rather than a plain button: it keeps the same look, the same
+          grid column and the same accessible name, but a tap opens the wheel
+          instead of the phone keyboard. */}
+      <input
+        type="text"
+        readOnly
+        className="input input-num"
+        value={disabled ? '' : value}
+        disabled={disabled}
+        onClick={() => !disabled && onOpenWheel()}
+        aria-label={`${label}. Tap to pick from a wheel.`}
+      />
+      <button type="button" className="stepper-btn" onClick={() => onStep(1)} disabled={disabled} aria-label={`${label} up`}>
+        <Plus size={16} />
+      </button>
+    </div>
+  );
+}
+
 export default function SetRow({
   index, row, targetReps, stepKg, bodyweight, repsAreSeconds, done, onChange, onDone,
 }: Props) {
@@ -49,36 +88,22 @@ export default function SetRow({
     onChange({ [field]: next });
   };
 
-  const Stepper = ({
-    field, value, label, disabled,
-  }: { field: 'kg' | 'reps'; value: number; label: string; disabled?: boolean }) => (
-    <div className="stepper" aria-label={label}>
-      <button type="button" className="stepper-btn" onClick={() => step(field, -1)} disabled={disabled} aria-label={`${label} down`}>
-        <Minus size={16} />
-      </button>
-      {/* readOnly rather than a plain button: it keeps the same look, the same
-          grid column and the same accessible name, but a tap opens the wheel
-          instead of the phone keyboard. */}
-      <input
-        type="text"
-        readOnly
-        className="input input-num"
-        value={disabled ? '' : value}
-        disabled={disabled}
-        onClick={() => !disabled && setWheel(field)}
-        aria-label={`${label}. Tap to pick from a wheel.`}
-      />
-      <button type="button" className="stepper-btn" onClick={() => step(field, 1)} disabled={disabled} aria-label={`${label} up`}>
-        <Plus size={16} />
-      </button>
-    </div>
-  );
-
   return (
     <div className="set-grid items-center">
       <span className="text-xs muted tabular text-center">{index + 1}</span>
-      <Stepper field="kg" value={row.kg} label={`Set ${index + 1} weight in kilograms`} disabled={bodyweight} />
-      <Stepper field="reps" value={row.reps} label={`Set ${index + 1} ${repsAreSeconds ? 'seconds' : 'reps'}`} />
+      <Stepper
+        value={row.kg}
+        label={`Set ${index + 1} weight in kilograms`}
+        disabled={bodyweight}
+        onStep={(d) => step('kg', d)}
+        onOpenWheel={() => setWheel('kg')}
+      />
+      <Stepper
+        value={row.reps}
+        label={`Set ${index + 1} ${repsAreSeconds ? 'seconds' : 'reps'}`}
+        onStep={(d) => step('reps', d)}
+        onOpenWheel={() => setWheel('reps')}
+      />
       <button
         type="button"
         onClick={onDone}

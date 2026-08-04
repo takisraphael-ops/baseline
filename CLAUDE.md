@@ -47,6 +47,14 @@ even where a `videoUrl` exists — it is the escape hatch for a video that dies.
 because the hosted single file must paint it before any JS runs. A fixture
 compares the two class lists and fails if they drift.
 
+**The inlined typeface is found by matching a filename Next emits, and that
+filename moves.** Webpack wrote `<hash>-s.p.woff2`; Turbopack in Next 16 writes
+`<hash>-s.p.<hash>.woff2`. The old `endsWith('-s.p.woff2')` in `demo/build.mjs`
+matched nothing at all after the upgrade, and a matcher that finds nothing is a
+build that succeeds having shipped system fonts. Keep it a pattern, keep
+`--require-font` on every real build, and expect this to break again on the next
+major. A fixture pins the matcher against both known filename shapes.
+
 ## Verifying
 
 Drive a real browser. Reading the code has repeatedly missed things that one
