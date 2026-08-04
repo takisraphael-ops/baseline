@@ -16,7 +16,7 @@ import { MAX_INDEX, QUESTIONS, cautions, startingLoad, strengthFactor, strengthI
 import { EXERCISES, demoUrl, hasCuratedVideo } from '../lib/train/exercises';
 import { drillDemoUrl, prepFor, rampSets } from '../lib/train/mobility';
 import { alternativesFor } from '../lib/train/swaps';
-import { historyFor } from '../lib/train/store';
+import { EMPTY, clearAll, getServerSnapshot, getSnapshot, historyFor, save, subscribe } from '../lib/train/store';
 import { THEME_BOOT_SCRIPT } from '../lib/train/theme';
 import { FIGURE } from '../lib/train/figure';
 import { BODY_REGIONS } from '../lib/train/body-regions';
@@ -540,6 +540,88 @@ console.log('\n--- Effort control matches the engine ---');
   expect('The "comfortable" button really does accelerate', fast.reps.join(','), '11,11,11');
   const held = nextTarget(legPress, legPressTarget, [rated(60, 12, rirs[2])]);
   expect('The "all out" button really does hold the load', held.kg, 60);
+}
+
+console.log('\n--- Store subscription ---');
+// useSyncExternalStore demands a snapshot that is referentially stable between
+// renders. `load()` parses fresh JSON into a new object every call, so handing
+// it straight to the hook is not a subtle bug — it is an infinite render loop.
+// The cache in store.ts is what makes the hook usable, and these assertions are
+// what stop someone deleting it.
+//
+// Needs a localStorage to talk to. Stubbed here and torn down after, because
+// everything else in this file is a pure function and should stay that way.
+{
+  const mem = new Map<string, string>();
+  const fakeStorage = {
+    getItem: (k: string) => mem.get(k) ?? null,
+    setItem: (k: string, v: string) => void mem.set(k, v),
+    removeItem: (k: string) => void mem.delete(k),
+  };
+  const g = globalThis as unknown as { window?: unknown };
+  const hadWindow = 'window' in g;
+  g.window = { localStorage: fakeStorage, addEventListener: () => {}, removeEventListener: () => {} };
+
+  // Static import: store.ts reads `window` lazily inside its functions, not at
+  // module load, so the stub above only has to be in place before the calls.
+  // 1. Stability. Two reads with no write between them must be the same object.
+  const a = getSnapshot();
+  const b = getSnapshot();
+  expect('getSnapshot is referentially stable', a === b, true);
+  expect('getSnapshot is not null on the client', a !== null, true);
+
+  // 2. A write must produce a different object, or subscribers re-render with
+  //    the data they already had and the screen never updates.
+  let fired = 0;
+  const unsub = subscribe(() => { fired++; });
+  save({ ...EMPTY, logs: [] });
+  const c = getSnapshot();
+  expect('a write invalidates the snapshot', c !== a, true);
+  expect('a write notifies subscribers', fired, 1);
+
+  // 3. ...and the new snapshot is stable again.
+  expect('the replacement snapshot is stable too', getSnapshot() === c, true);
+
+  // 4. clearAll is the other write path. Missing it leaves every screen
+  //    rendering the history that was just deleted.
+  clearAll();
+  expect('clearAll notifies subscribers', fired, 2);
+  expect('clearAll invalidates the snapshot', getSnapshot() !== c, true);
+  expect('the state really is empty after clearAll', getSnapshot()?.logs.length, 0);
+
+  // 5. Unsubscribing has to actually stop it, or every visited screen keeps a
+  //    listener for the life of the tab.
+  unsub();
+  save({ ...EMPTY, logs: [] });
+  expect('unsubscribe stops notifications', fired, 2);
+
+  // 6. Null on the server, which is what every screen shows its Loading line
+  //    for. EMPTY here would prerender the onboarding quiz to existing users.
+  expect('getServerSnapshot is null', getServerSnapshot(), null);
+
+  if (!hadWindow) delete g.window;
+}
+
+// The pattern this replaced, which must not creep back in. A screen that loads
+// with an effect renders once with nothing, and needs a manual re-read after
+// every write to stay current — miss one and it shows stale numbers.
+{
+  const screens = [
+    '../app/page.tsx', '../app/cardio/page.tsx', '../app/progress/page.tsx',
+    '../app/settings/page.tsx', '../app/session/[id]/page.tsx',
+    '../components/session-player.tsx', '../components/theme-toggle.tsx', '../components/term.tsx',
+  ];
+  for (const f of screens) {
+    const src = readFileSync(new URL(f, import.meta.url), 'utf8');
+    const name = f.replace('../', '');
+    expect(`${name} does not load state in an effect`, /useEffect\(\(\)\s*=>\s*\{?\s*set\w+\(load\(\)\)/.test(src), false);
+    expect(`${name} does not re-read after a write`, src.includes('setState(load())'), false);
+  }
+  const store = readFileSync(new URL('../lib/train/store.ts', import.meta.url), 'utf8');
+  // Both write paths, and the blocked-storage branch that used to return early.
+  expect('save invalidates unconditionally', /invalidate\(\);\n\}/.test(store.slice(store.indexOf('export function save'))), true);
+  expect('clearAll invalidates', store.slice(store.indexOf('export function clearAll')).includes('invalidate();'), true);
+  expect('store.ts stays React-free', /from 'react'/.test(store), false);
 }
 
 console.log('\n--- How the app addresses the athlete ---');

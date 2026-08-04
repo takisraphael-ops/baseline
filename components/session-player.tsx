@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftRight, Check, ChevronDown, ChevronUp, Info, Link2, PlayCircle, RotateCcw, Search, Trophy, Undo2 } from 'lucide-react';
@@ -10,8 +10,9 @@ import { demoUrl, getExercise, hasCuratedVideo, ytSearch } from '@/lib/train/exe
 import { SESSION_ORDER, TOTAL_WEEKS, blockForWeek, intervalsForWeek, isDeloadWeek, scaleTarget } from '@/lib/train/programme';
 import { formatTarget, nextTarget, topKg } from '@/lib/train/progression';
 import { defaultSetupOpen, startingLoad, strengthFactor } from '@/lib/train/quiz';
-import { appendLog, historyFor, load, todayISO } from '@/lib/train/store';
-import type { LoggedSet, SessionSpec, TrainState } from '@/lib/train/types';
+import { appendLog, historyFor, todayISO } from '@/lib/train/store';
+import { useTrainState } from '@/lib/train/use-store';
+import type { LoggedSet, SessionSpec } from '@/lib/train/types';
 import MuscleMap from '@/components/muscle-map';
 import RestTimer from '@/components/rest-timer';
 import SetRow, { EffortPicker } from '@/components/set-row';
@@ -40,10 +41,17 @@ const SECONDS = new Set(['plank']);
 
 export default function SessionPlayer({ session, week }: { session: SessionSpec; week: number }) {
   const router = useRouter();
-  const [state, setState] = useState<TrainState | null>(null);
+  const state = useTrainState();
+  // Only what she has actually touched. Everything untouched falls through to
+  // the prescription below rather than being copied into state up front — see
+  // `defaults`.
   const [logged, setLogged] = useState<Record<string, LoggedSet[]>>({});
   const [doneFlags, setDoneFlags] = useState<Record<string, boolean[]>>({});
-  const [open, setOpen] = useState<string | null>(null);
+  // `undefined` means she has not opened or closed anything yet, which is
+  // different from having closed everything. Only then does the quiz answer get
+  // to decide. Without the third state, a deliberate close would spring back
+  // open on the next render.
+  const [open, setOpen] = useState<string | null | undefined>(undefined);
   const [rest, setRest] = useState<number | null>(null);
   const [cardioDone, setCardioDone] = useState(false);
   /** Substitutions for today only, keyed by the slot's original exercise id. */
@@ -51,10 +59,6 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
   const [swapOpen, setSwapOpen] = useState<string | null>(null);
   const [felt, setFelt] = useState('');
   const [finishing, setFinishing] = useState(false);
-
-  useEffect(() => {
-    setState(load());
-  }, []);
 
   const block = blockForWeek(week);
   const deload = isDeloadWeek(week);
@@ -84,47 +88,45 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
     });
   }, [state, session, week, swaps]);
 
-  // Every row starts pre-filled with the target, so a value is always on screen.
-  // Runs for anything in the plan that has no rows yet, which also covers an
-  // exercise swapped in mid-session.
-  useEffect(() => {
-    if (plan.length === 0) return;
-    setLogged((prev) => {
-      const next = { ...prev };
-      let added = false;
-      for (const { ex, decision } of plan) {
-        if (!next[ex.id]) {
-          next[ex.id] = decision.reps.map((reps) => ({ kg: decision.kg, reps, rir: null }));
-          added = true;
-        }
-      }
-      return added ? next : prev;
-    });
-    setDoneFlags((prev) => {
-      const next = { ...prev };
-      let added = false;
-      for (const { ex, decision } of plan) {
-        if (!next[ex.id]) {
-          next[ex.id] = decision.reps.map(() => false);
-          added = true;
-        }
-      }
-      return added ? next : prev;
-    });
+  // Every row shows the prescribed target until she changes it, so a value is
+  // always on screen.
+  //
+  // Derived, not copied into state. This used to be an effect that pushed the
+  // prescription into `logged` after render, which meant one frame where a row
+  // existed with no numbers, and a second write for anything swapped in
+  // mid-session — the substitute's rows appeared a render late. Reading through
+  // to the default instead means the values are correct on the first render
+  // they exist, and there is nothing to keep in step.
+  const defaults = useMemo(() => {
+    const rows: Record<string, LoggedSet[]> = {};
+    const flags: Record<string, boolean[]> = {};
+    for (const { ex, decision } of plan) {
+      rows[ex.id] = decision.reps.map((reps) => ({ kg: decision.kg, reps, rir: null }));
+      flags[ex.id] = decision.reps.map(() => false);
+    }
+    return { rows, flags };
   }, [plan]);
 
-  useEffect(() => {
-    if (!state || open !== null) return;
-    const conf = state.profile?.quiz?.confidence;
-    // Someone who said the machines are a mystery gets the setup open by default.
-    if (conf && defaultSetupOpen(conf)) setOpen(plan[0]?.ex.id ?? null);
-  }, [state, plan, open]);
+  /** Her rows for an exercise, or the prescription if she has not touched it. */
+  const rowsFor = (id: string): LoggedSet[] => logged[id] ?? defaults.rows[id] ?? [];
+  const flagsFor = (id: string): boolean[] => doneFlags[id] ?? defaults.flags[id] ?? [];
+
+  // Someone who said the machines are a mystery gets the first setup open.
+  // Computed rather than assigned in an effect, so it is right on the first
+  // render instead of flipping open on the second.
+  const conf = state?.profile?.quiz?.confidence;
+  const openId =
+    open !== undefined ? open : conf && defaultSetupOpen(conf) ? plan[0]?.ex.id ?? null : null;
 
   if (!state) return <p className="muted py-8">Loading…</p>;
 
+  // Every writer seeds from the DERIVED rows, not from `prev` alone. Until she
+  // touches an exercise there is no entry in state at all, so `prev[id]` is
+  // undefined and editing set 3 of an untouched exercise would otherwise write
+  // a sparse array and blank the other two.
   const update = (id: string, i: number, patch: Partial<LoggedSet>) => {
     setLogged((prev) => {
-      const rows = [...(prev[id] ?? [])];
+      const rows = [...(prev[id] ?? defaults.rows[id] ?? [])];
       rows[i] = { ...rows[i], ...patch };
       return { ...prev, [id]: rows };
     });
@@ -132,7 +134,7 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
 
   const toggleDone = (id: string, i: number, restSec: number) => {
     setDoneFlags((prev) => {
-      const rows = [...(prev[id] ?? [])];
+      const rows = [...(prev[id] ?? defaults.flags[id] ?? [])];
       const next = !rows[i];
       rows[i] = next;
       if (next) setRest(restSec);
@@ -142,7 +144,7 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
 
   const fillFromLast = (id: string, last: LoggedSet[]) => {
     setLogged((prev) => {
-      const rows = [...(prev[id] ?? [])];
+      const rows = [...(prev[id] ?? defaults.rows[id] ?? [])];
       return { ...prev, [id]: rows.map((r, i) => (last[i] ? { ...last[i] } : r)) };
     });
   };
@@ -165,8 +167,8 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
   // undo restores the ticks — and counting those too means the meter is scored
   // against sets that are no longer in the session and that `finish()` never
   // writes, so it could never reach 100%.
-  const totalSets = plan.reduce((n, { ex }) => n + (doneFlags[ex.id]?.length ?? 0), 0);
-  const doneSets = plan.reduce((n, { ex }) => n + (doneFlags[ex.id] ?? []).filter(Boolean).length, 0);
+  const totalSets = plan.reduce((n, { ex }) => n + flagsFor(ex.id).length, 0);
+  const doneSets = plan.reduce((n, { ex }) => n + flagsFor(ex.id).filter(Boolean).length, 0);
   const pct = totalSets > 0 ? (doneSets / totalSets) * 100 : 0;
 
   const finish = () => {
@@ -174,8 +176,8 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
     const exercises = plan
       .map(({ ex, decision }) => ({
         exerciseId: ex.id,
-        sets: (logged[ex.id] ?? [])
-          .filter((_, i) => doneFlags[ex.id]?.[i])
+        sets: rowsFor(ex.id)
+          .filter((_, i) => flagsFor(ex.id)[i])
           // Record the slow lowering when it was prescribed, so next session can
           // see it was already tried. Without this the tempo lever would be the
           // last word forever and micro-loading could never be reached.
@@ -201,8 +203,8 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
   // Counted from what is actually in the log, not from the targets on screen.
   const bests = plan.filter(({ ex, best }) => {
     if (best <= 0) return false;
-    const rows = logged[ex.id] ?? [];
-    const flags = doneFlags[ex.id] ?? [];
+    const rows = rowsFor(ex.id);
+    const flags = flagsFor(ex.id);
     return rows.some((r, i) => flags[i] && r.kg > best);
   });
 
@@ -267,9 +269,9 @@ export default function SessionPlayer({ session, week }: { session: SessionSpec;
       />
 
       {plan.map(({ slot, ex, target, history, best, decision }, idx) => {
-        const isOpen = open === ex.id;
-        const rows = logged[ex.id] ?? [];
-        const flags = doneFlags[ex.id] ?? [];
+        const isOpen = openId === ex.id;
+        const rows = rowsFor(ex.id);
+        const flags = flagsFor(ex.id);
         const partner = slot.supersetWith !== undefined ? plan[slot.supersetWith] : null;
         const last = history[0];
         const bodyweight = decision.kg === 0 && ex.bwRatio === 0;

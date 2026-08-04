@@ -18,6 +18,7 @@ export function isThemeChoice(v: unknown): v is ThemeChoice {
 
 export function readTheme(): ThemeChoice {
   try {
+    if (typeof window === 'undefined') return 'system';
     const v = window.localStorage.getItem(THEME_KEY);
     return isThemeChoice(v) ? v : 'system';
   } catch {
@@ -46,6 +47,39 @@ export function saveTheme(choice: ThemeChoice): void {
   } catch {
     // Nothing to do — the choice still applies for this session.
   }
+  emitTheme();
+}
+
+// ---------------------------------------------------------------- subscription
+// The choice is a plain string, so unlike the training state there is nothing to
+// cache: a string compares by value, which is all useSyncExternalStore asks for.
+const themeListeners = new Set<() => void>();
+
+function emitTheme(): void {
+  for (const l of [...themeListeners]) l();
+}
+
+function onThemeStorage(e: StorageEvent): void {
+  if (e.key !== null && e.key !== THEME_KEY) return;
+  // Applied here rather than from a component, because the attribute lives on
+  // <html> — outside React's tree entirely. Changing theme in one tab now
+  // follows in the others instead of leaving them on the old colours until a
+  // reload.
+  applyTheme(readTheme());
+  emitTheme();
+}
+
+export function subscribeTheme(onChange: () => void): () => void {
+  themeListeners.add(onChange);
+  if (typeof window !== 'undefined' && themeListeners.size === 1) {
+    window.addEventListener('storage', onThemeStorage);
+  }
+  return () => {
+    themeListeners.delete(onChange);
+    if (typeof window !== 'undefined' && themeListeners.size === 0) {
+      window.removeEventListener('storage', onThemeStorage);
+    }
+  };
 }
 
 /**

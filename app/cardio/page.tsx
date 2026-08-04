@@ -1,25 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Glossed from '@/components/glossed';
 import Term from '@/components/term';
 import { getSession, intervalsForWeek, weekForSessionCount } from '@/lib/train/programme';
-import { appendTest, load, todayISO } from '@/lib/train/store';
+import { appendTest, todayISO } from '@/lib/train/store';
+import { useTrainState } from '@/lib/train/use-store';
 import { maxHrTanaka, zones } from '@/lib/train/zones';
 import { ROCKPORT_DISTANCE_KM, classifyVo2, cooperVo2, isMeaningfulChange, rockportVo2, vo2Band, vo2Delta } from '@/lib/train/vo2';
-import type { TrainState } from '@/lib/train/types';
 
 export default function CardioPage() {
-  const [state, setState] = useState<TrainState | null>(null);
+  const state = useTrainState();
   const [kind, setKind] = useState<'rockport' | 'cooper'>('rockport');
   const [timeMin, setTimeMin] = useState('');
   const [hr, setHr] = useState('');
   const [metres, setMetres] = useState('');
-
-  useEffect(() => {
-    setState(load());
-  }, []);
 
   if (!state) return <p className="muted py-8">Loading…</p>;
   if (!state.profile) {
@@ -59,7 +55,8 @@ export default function CardioPage() {
       metres: kind === 'cooper' ? Number(metres) : undefined,
       vo2max: vo2,
     });
-    setState(load());
+    // No re-read: appendTest writes through the store, which notifies this
+    // component. Clearing the inputs is the only local work left.
     setTimeMin('');
     setHr('');
     setMetres('');

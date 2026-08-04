@@ -344,11 +344,19 @@ itself is what the programme tracks.
 
 ## 6. Architecture
 
-- **Next.js 14 App Router**, TypeScript, Tailwind, Recharts. No database, no
+- **Next.js 16 App Router**, TypeScript, Tailwind, Recharts. No database, no
   accounts, no server-side state, no outbound requests at run time.
 - **Persistence is device-local**, behind `lib/train/store.ts`. Rationale and
   trade-offs in the README. One module means a sync backend can be added later
   without touching a component.
+- **Screens subscribe to the store** through `useSyncExternalStore`, wired up in
+  `lib/train/use-store.ts`. `store.ts` caches its parse so the snapshot is one
+  stable object until something writes, and both write paths — `save` and
+  `clearAll` — invalidate it. That cache is load-bearing: `load()` builds a
+  fresh object every call, and handing an unstable snapshot to the hook is an
+  infinite render loop, not a subtle bug. The hooks live in their own module
+  because `scripts/fixture-run.ts` imports `store.ts` under plain node and
+  pulling React in would break the fixture run.
 - **Pure logic modules** — `progression`, `zones`, `vo2`, `volume` — have no
   framework imports and are asserted directly by `scripts/fixture-run.ts`.
 - **Content is typed data** — `exercises.ts`, `programme.ts`, `learn.ts` — so the
@@ -381,17 +389,7 @@ it. The optional "how did that feel?" field is never scored or interpreted.
    available and would improve the machine-stack fallback most of all.
 4. **Weeks 13+ are not generated.** After week 12 the app tells her to re-test
    and run it again from the new numbers. Automatic regeneration is a later job.
-5. **State is loaded with `setState` inside an effect**, at ten sites, and the
-   `react-hooks/set-state-in-effect` rule is switched off in `eslint.config.mjs`
-   because of it. The pattern is deliberate — the store is localStorage, the
-   server render and the first client render have to agree, and reading storage
-   during render would hydrate wrong — but the rule is still pointing at a real
-   extra render. The modern answer is `useSyncExternalStore`, which needs a
-   stable snapshot; `load()` returns a fresh object every call, so it would loop.
-   Doing it properly means caching the snapshot in `lib/train/store.ts` and
-   invalidating on write: a change to the layer every screen depends on, worth
-   its own pass rather than being folded into something else.
-6. **VO2 norms cover ages 20–49 only.** Both sexes, from the Cooper Institute
+5. **VO2 norms cover ages 20–49 only.** Both sexes, from the Cooper Institute
    bands that could be sourced and checked. An athlete of 50+ gets the estimate,
    the error band and the trend — everything the programme acts on — but no
    population rating, because nothing is shown that has not been verified.

@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { Download, Upload } from 'lucide-react';
 import SexPicker from '@/components/sex-picker';
 import ThemeToggle from '@/components/theme-toggle';
-import { clearAll, exportJson, isEphemeral, load, parseImport, save, saveProfile, todayISO } from '@/lib/train/store';
+import { clearAll, exportJson, isEphemeral, parseImport, save, saveProfile, todayISO } from '@/lib/train/store';
+import { useTrainState } from '@/lib/train/use-store';
 import type { TrainState } from '@/lib/train/types';
 
 export default function SettingsPage() {
-  const [state, setState] = useState<TrainState | null>(null);
+  const state = useTrainState();
   const [msg, setMsg] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   // Parsed but not yet saved. Replacing the log is the most destructive thing in
@@ -18,10 +19,6 @@ export default function SettingsPage() {
   const [pending, setPending] = useState<{ state: TrainState; name: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setState(load());
-  }, []);
-
   if (!state) return <p className="muted py-8">Loading…</p>;
 
   const p = state.profile;
@@ -29,7 +26,6 @@ export default function SettingsPage() {
   const patch = (k: string, v: number) => {
     if (!p) return;
     saveProfile({ ...p, [k]: v });
-    setState(load());
   };
 
   const download = () => {
@@ -65,7 +61,6 @@ export default function SettingsPage() {
   const confirmImport = () => {
     if (!pending) return;
     save(pending.state);
-    setState(load());
     setPending(null);
     setMsg('Imported.');
   };
@@ -105,7 +100,6 @@ export default function SettingsPage() {
                   return;
                 }
                 saveProfile({ ...p, name: next });
-                setState(load());
               }}
             />
           </div>
@@ -121,7 +115,7 @@ export default function SettingsPage() {
           {/* Changing this does not rewrite stored results — each test keeps the
               number it was calculated with — but it does correct the population
               comparison shown against the latest one, and every future test. */}
-          <SexPicker value={p.sex} onChange={(sex) => { saveProfile({ ...p, sex }); setState(load()); }} />
+          <SexPicker value={p.sex} onChange={(sex) => saveProfile({ ...p, sex })} />
           <div>
             <label htmlFor="hr" className="label mb-1.5">Resting heart rate (bpm)</label>
             <input id="hr" type="number" inputMode="numeric" className="input input-num" defaultValue={p.restingHr} onBlur={(e) => patch('restingHr', Number(e.target.value))} />
@@ -200,7 +194,6 @@ export default function SettingsPage() {
             <button
               onClick={() => {
                 clearAll();
-                setState(load());
                 setConfirmReset(false);
                 setMsg('Everything cleared.');
               }}

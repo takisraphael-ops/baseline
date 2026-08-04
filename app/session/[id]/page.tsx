@@ -1,17 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import SessionPlayer from '@/components/session-player';
 import { SESSIONS, weekForSessionCount } from '@/lib/train/programme';
-import { load } from '@/lib/train/store';
+import { useTrainState } from '@/lib/train/use-store';
 
 export default function SessionPage({ params }: { params: { id: string } }) {
-  const [week, setWeek] = useState<number | null>(null);
-
-  useEffect(() => {
-    setWeek(weekForSessionCount(load().logs.length));
-  }, []);
+  const state = useTrainState();
+  const week = state ? weekForSessionCount(state.logs.length) : null;
 
   const session = SESSIONS.find((s) => s.id === params.id);
 

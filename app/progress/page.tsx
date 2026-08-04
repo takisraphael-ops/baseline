@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Ignition from '@/components/ignition';
@@ -9,20 +9,17 @@ import { MUSCLE_LABELS, getExercise } from '@/lib/train/exercises';
 import { displayName, nothingLoggedLine } from '@/lib/train/greeting';
 import { SESSIONS, TOTAL_WEEKS, blockForWeek, getSession, nextSessionId, weekForSessionCount } from '@/lib/train/programme';
 import { tonnage, topKg } from '@/lib/train/progression';
-import { historyFor, load } from '@/lib/train/store';
+import { historyFor } from '@/lib/train/store';
+import { useTrainState } from '@/lib/train/use-store';
 import { actualWeeklyVolume, targetWeeklyVolume, weeklyCardioMinutes, weeklyWalkMinutes } from '@/lib/train/volume';
-import type { Muscle, TrainState } from '@/lib/train/types';
+import type { Muscle } from '@/lib/train/types';
 
 const TRACKED: Muscle[] = ['glutes', 'quads', 'hamstrings', 'lats', 'upper-back', 'chest', 'side-delts'];
 
 
 export default function ProgressPage() {
-  const [state, setState] = useState<TrainState | null>(null);
+  const state = useTrainState();
   const [lift, setLift] = useState('leg-press');
-
-  useEffect(() => {
-    setState(load());
-  }, []);
 
   const mainLifts = useMemo(
     () => SESSIONS.flatMap((s) => s.slots.filter((x) => x.role === 'main' || x.role === 'secondary').map((x) => x.exerciseId)),
