@@ -55,7 +55,7 @@ npm run dev
 ```
 npm run fixture    # asserts the training maths — progression, zones, VO2, volume
 npm run typecheck
-npm run lint
+npm run lint       # eslint directly: `next lint` was removed in Next 16
 npm run build
 ```
 

@@ -643,6 +643,22 @@ console.log('\n--- Build targets ---');
   expect('artifact build has no <html>', frag.includes('<html'), false);
   expect('artifact build has no <body>', frag.includes('<body'), false);
   expect('--standalone writes index.html', build.includes("? 'index.html'"), true);
+
+  // The inlined typeface is found by matching a filename that next/font emits,
+  // and that filename is not stable across Next versions. Webpack wrote
+  // `<hash>-s.p.woff2`; Turbopack in Next 16 writes `<hash>-s.p.<hash>.woff2`,
+  // and the old endsWith() check matched neither the new shape nor anything
+  // else — it just found nothing. Without --require-font that is a green build
+  // shipping system fonts. Pin the matcher against both real shapes.
+  const matcher = build.match(/const latin = readdirSync\(media\)\.find\(\(f\) => (.+)\);/)?.[1] ?? '';
+  const re = new RegExp((matcher.match(/\/(.+)\/\.test/)?.[1]) ?? '(?!)');
+  expect('font matcher is a pattern, not a fixed suffix', /\.test\(f\)/.test(matcher), true);
+  expect('matches the webpack filename', re.test('e4af272ccee01ff0-s.p.woff2'), true);
+  expect('matches the Turbopack filename', re.test('83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2'), true);
+  // Must still pick the PRELOADED subset and not a neighbouring one, or the
+  // page inlines the wrong glyphs and looks subtly off.
+  expect('skips the non-preloaded subsets', re.test('1bffadaabf893a1e-s.3-6t-g6q0vh0a.woff2'), false);
+  expect('skips a plain latin subset', re.test('19cfc7226ec3afaa-s.woff2'), false);
 }
 
 console.log('\n--- Offline cache ---');
