@@ -93,8 +93,18 @@ export default function SettingsPage() {
               id="nm"
               className="input"
               defaultValue={p.name}
+              placeholder="What should the app call you?"
+              autoCapitalize="words"
               onBlur={(e) => {
-                saveProfile({ ...p, name: e.target.value.trim() || 'you' });
+                // Clearing it keeps the previous name rather than writing a
+                // placeholder word into the profile. Blanking a field is more
+                // often a slip than a request to be addressed as "you".
+                const next = e.target.value.trim();
+                if (!next) {
+                  e.target.value = p.name;
+                  return;
+                }
+                saveProfile({ ...p, name: next });
                 setState(load());
               }}
             />

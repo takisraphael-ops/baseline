@@ -83,6 +83,11 @@ jobs:
           test -s _site/sw.js
           grep -q 'name="viewport"' _site/index.html
           grep -q "register('./sw.js'" _site/index.html
+          # A client's name was once seeded as the onboarding default and shipped
+          # to this public URL, greeting every stranger who opened it as her. The
+          # fixture run guards the source; this guards the bytes, which is what
+          # actually reaches a phone.
+          ! grep -qi 'diva' _site/index.html
 
       - uses: actions/upload-pages-artifact@v3
         with:

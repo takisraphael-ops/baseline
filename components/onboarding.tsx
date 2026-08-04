@@ -31,7 +31,9 @@ type Stage = 'welcome' | 'parq' | 'numbers' | 'quiz' | 'result';
 export default function Onboarding({ onDone }: { onDone: () => void }) {
   const [stage, setStage] = useState<Stage>('welcome');
   const [parq, setParq] = useState<boolean[]>(Array(PARQ.length).fill(false));
-  const [name, setName] = useState('Diva');
+  // Empty, and required below. This was seeded with one client's name, which
+  // then greeted every stranger who opened the public URL by it.
+  const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [weightKg, setWeightKg] = useState('');
   const [restingHr, setRestingHr] = useState('');
@@ -66,7 +68,9 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
   const finish = () => {
     const full = answers as QuizAnswers;
     const profile: Profile = {
-      name: name.trim() || 'you',
+      // Stored as typed, never substituted. The step above cannot be passed
+      // without one, and the greetings handle a blank from an import.
+      name: name.trim(),
       age: Number(age) || 25,
       weightKg: bw,
       restingHr: Number(restingHr) || 65,
@@ -88,7 +92,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
         <header className="pt-4">
           <p className="chip chip-accent mb-3">Twelve weeks</p>
           <h1 className="text-2xl font-semibold tracking-tight" style={{ textWrap: 'balance' }}>
-            Hi Diva — let&rsquo;s work out where you&rsquo;re starting from.
+            Let&rsquo;s work out where you&rsquo;re starting from.
           </h1>
           <p className="muted mt-2 text-sm">
             Eight questions, about two minutes. They set your starting weight on every machine, so your
@@ -176,8 +180,17 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
         </header>
         <div className="card space-y-4">
           <div>
-            <label htmlFor="nm" className="label mb-1.5">Name</label>
-            <input id="nm" className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            <label htmlFor="nm" className="label mb-1.5">Your name</label>
+            <input
+              id="nm"
+              className="input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="What should the app call you?"
+              autoComplete="given-name"
+              autoCapitalize="words"
+              enterKeyHint="next"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -210,7 +223,11 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
         </div>
         <div className="flex gap-3">
           <button onClick={() => setStage('parq')} className="btn btn-ghost" aria-label="Back"><ArrowLeft size={16} /></button>
-          <button onClick={() => setStage('quiz')} disabled={!age || !weightKg} className="btn btn-primary flex-1">
+          {/* The name gates the step alongside the numbers. Every greeting in
+              the app is written around one, so letting it through empty means
+              either a placeholder word standing in for a person or a sentence
+              that stops mid-phrase. Asking once, here, costs a second. */}
+          <button onClick={() => setStage('quiz')} disabled={!name.trim() || !age || !weightKg} className="btn btn-primary flex-1">
             Continue <ArrowRight size={16} />
           </button>
         </div>

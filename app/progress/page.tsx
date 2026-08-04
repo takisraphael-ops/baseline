@@ -6,6 +6,7 @@ import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'rec
 import Ignition from '@/components/ignition';
 import Term from '@/components/term';
 import { MUSCLE_LABELS, getExercise } from '@/lib/train/exercises';
+import { displayName, nothingLoggedLine } from '@/lib/train/greeting';
 import { SESSIONS, TOTAL_WEEKS, blockForWeek, getSession, nextSessionId, weekForSessionCount } from '@/lib/train/programme';
 import { tonnage, topKg } from '@/lib/train/progression';
 import { historyFor, load } from '@/lib/train/store';
@@ -14,7 +15,6 @@ import type { Muscle, TrainState } from '@/lib/train/types';
 
 const TRACKED: Muscle[] = ['glutes', 'quads', 'hamstrings', 'lats', 'upper-back', 'chest', 'side-delts'];
 
-const profileName = (s: TrainState) => s.profile?.name ?? 'you';
 
 export default function ProgressPage() {
   const [state, setState] = useState<TrainState | null>(null);
@@ -36,7 +36,7 @@ export default function ProgressPage() {
       <div className="py-8 space-y-3">
         <h1 className="text-2xl font-semibold tracking-tight">Progress</h1>
         <p className="muted text-sm">
-          Nothing logged yet, {profileName(state)}. Finish your first session and this fills up —
+          {nothingLoggedLine(displayName(state.profile))} Finish your first session and this fills up —
           every set, every weight, and the trend on each lift.
         </p>
         <Link href="/" className="btn btn-primary">Start a session</Link>
