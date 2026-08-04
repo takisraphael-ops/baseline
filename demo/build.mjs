@@ -209,7 +209,38 @@ self.addEventListener('fetch', (event) => {
 // isSecureContext because service workers do not exist over file://, which is
 // how the build is opened for local checks — an unguarded register() throws
 // there and the app is fine without one.
-const SW_REGISTER = `(function(){if(!('serviceWorker' in navigator)||!window.isSecureContext)return;window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(function(r){r.update()}).catch(function(){})})})();`;
+//
+// The update checks are the load-bearing part, and the obvious way to write
+// them does not work. `register().then(function(r){r.update()})` was what this
+// did, and measured with a request counter the browser never fetched sw.js
+// again — one request across four reloads. An update() in the same tick as
+// register() is coalesced with the registration's own check, and Chromium does
+// not re-fetch on navigation either. So a new build's CACHE name never arrived
+// and `activate` never purged.
+//
+// An update() on a real trigger, separated from register, does fetch. Two
+// triggers, because they cover different ways she comes back:
+//
+//   - a moment after load, for the launch-from-the-home-screen case
+//   - on becoming visible again, for the app left open in a background tab
+//
+// Throttled to once a minute so switching apps repeatedly does not turn into a
+// request per switch.
+//
+// Deliberately no auto-reload when a new worker takes over. The page would
+// reload out from under her, and this app is used with a barbell in the other
+// hand. The content is already handled: the worker revalidates in the
+// background, so the next launch has the new build either way. These checks
+// are what keep the WORKER current — its caching logic, and the purge.
+const SW_REGISTER = `(function(){
+if(!('serviceWorker' in navigator)||!window.isSecureContext)return;
+var last=0;
+function check(r){var n=Date.now();if(n-last>=60000){last=n;r.update().catch(function(){})}}
+window.addEventListener('load',function(){
+navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(function(r){
+window.setTimeout(function(){check(r)},3000);
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')check(r)});
+}).catch(function(){})})})();`.replace(/\n/g, '');
 
 // --------------------------------------------------------------------- page
 // Applies the saved theme before the first paint, in both targets — the

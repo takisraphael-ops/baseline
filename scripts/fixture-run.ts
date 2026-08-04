@@ -794,6 +794,25 @@ console.log('\n--- Offline cache ---');
   expect('artifact fragment does not register a worker', /serviceWorker|sw\.js/.test(frag), false);
   expect('sw.js is written for --standalone only', build.includes("if (isStandalone) writeFileSync(resolve(out, 'sw.js'), SW)"), true);
   expect('registration is guarded for file://', build.includes('window.isSecureContext'), true);
+
+  // The update checks, which is where this was silently broken. `r.update()`
+  // called in the same tick as register() is coalesced with the registration's
+  // own check and never fetches — measured with a request counter, sw.js was
+  // fetched exactly once and never again, so a new build's CACHE name never
+  // arrived and `activate` never purged. It has to run on a real trigger.
+  //
+  // Asserted against the emitted script rather than the file: the comment above
+  // it quotes the broken pattern, and matching the whole file finds the prose.
+  const reg = build.slice(build.indexOf('const SW_REGISTER'), build.indexOf("`.replace(/\\n/g, '')"));
+  expect('update is not called in the register tick', /\.then\(function\(r\)\{r\.update\(\)/.test(reg), false);
+  expect('checks again shortly after load', reg.includes('window.setTimeout(function(){check(r)},3000)'), true);
+  expect('checks when the app becomes visible again', reg.includes('visibilitychange'), true);
+  expect('...and only when actually visible', reg.includes("document.visibilityState==='visible'"), true);
+  // Switching apps repeatedly must not become a request per switch.
+  expect('update checks are throttled', reg.includes('if(n-last>=60000)'), true);
+  // A bare `<` inside an inlined <script> is legal, but needless in a document
+  // assembled by string concatenation.
+  expect('the registration script carries no bare <', reg.includes('<'), false);
   // Without this the browser may serve the worker itself from the HTTP cache,
   // and a shipped build can go unnoticed for as long as that copy lives.
   expect('registration bypasses the HTTP cache for sw.js', build.includes("updateViaCache:'none'"), true);

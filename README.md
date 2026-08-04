@@ -121,13 +121,17 @@ Two outputs from one entry, switched by a `__PREVIEW__` define:
   the reflex when a page looks stuck, in exactly the basement this is for.
   Cache-first rather than the usual network-first on purpose: a phone associated
   with an access point that has no route out hangs rather than failing fast.
-  Staleness is bounded at one launch by the background revalidation: the worker
-  fetches the document after serving the cached copy, so the next launch gets
-  the new build. Measured, that is the mechanism that actually delivers.
-  The *other* mechanism previously claimed here does not — see known gap 6 in
-  SPEC.md. Chromium did not re-fetch `sw.js` across four reloads, so a changed
-  `CACHE` name never reaches the phone on its own and `activate` never runs its
-  purge. Content still updates; the worker's own logic does not.
+  Staleness is bounded at one launch by two independent mechanisms, and it is
+  worth knowing which does what. New *content* arrives through the worker's
+  background revalidation: it serves the cached document, then fetches, so the
+  next launch has the new build. The *worker itself* updates because the page
+  calls `registration.update()` on a real trigger — a moment after load, and
+  again when the app becomes visible — throttled to once a minute. Calling it in
+  the same tick as `register()` does not work: measured with a request counter,
+  `sw.js` was then fetched exactly once and never again, so a changed `CACHE`
+  name never arrived and `activate` never purged. There is deliberately no
+  auto-reload when a new worker takes over; the page would reload out from under
+  someone mid-set.
 - **Videos are linked, never embedded.** The app sets `X-Frame-Options: DENY`
   and grants no device permissions. Links open in a new tab. All 41 exercises
   carry a curated tutorial, each id resolved through YouTube's oembed endpoint
